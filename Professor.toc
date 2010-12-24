@@ -1,0 +1,10 @@
+## Interface: 40000
+## Title: Professor
+## Author: Anossov
+## Version: 2.0.1
+## SavedVariables: ProfessorDB
+## Notes: trollollo
+
+embeds.xml
+
+Professor.lua
