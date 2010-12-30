@@ -7,8 +7,9 @@ Professor:RegisterChatCommand("prof", "SlashProcessorFunction")
 
 function Professor:OnInitialize()
   -- Code that you want to run when the addon is first loaded goes here.
-
+	
 end
+
 
 function Professor:OnEnable()
     -- Called when the addon is enabled
@@ -18,7 +19,9 @@ function Professor:OnDisable()
     -- Called when the addon is disabled
 end
 
-Professor.ARTIFACT_COUNTS = {
+
+Professor.races = {}
+Professor.artifacts = {
 	{27; 4};
 	{8; 2};
 	{12; 2};
@@ -31,52 +34,101 @@ Professor.ARTIFACT_COUNTS = {
 	{0; 0};
 }
 
-function Professor:OnHistoryReady(event, ...)
-	if IsArtifactCompletionHistoryAvailable() then
+Professor.COLORS = {
+	text   = '|cffaaaaaa';
+	race   = _G['ORANGE_FONT_COLOR_CODE'];
+	common = '|cffffffff';
+	rare   = '|cff66ccff';
+	total  = '|cffffffff';
+}
+
+function Professor:LoadRaces()
+	local raceCount = GetNumArchaeologyRaces()
+	if raceCount ~= #self.artifacts then
+		print("Error: unknown races detected")
+		return
+	end
+	self.races = {}
+	
+	for raceIndex=1, raceCount do
+		local raceName, raceCurrency, raceTexture, raceItemID = GetArchaeologyRaceInfo(raceIndex)
+		local artifactCount = GetNumArtifactsByRace(raceIndex)
 		
-		raceCount = GetNumArchaeologyRaces()
+		local artifactIndex = 1
+		local done = false
+		local common = 0
+		local rare = 0
+		local total = 0
 		
-		for raceIndex=1, raceCount do
-			raceName, raceCurrency, raceTexture, raceItemID = GetArchaeologyRaceInfo(raceIndex)
-			artifactCount = GetNumArtifactsByRace(raceIndex)
-			
-			artifactIndex = 1
-			local done = false
-			local common = 0
-			local rare = 0
-			local total = 0
-			
-			repeat
-				name, description, rarity, icon, spellDescription,  _, _, firstComletionTime, completionCount = GetArtifactInfoByRace(raceIndex, artifactIndex)
-				artifactIndex = artifactIndex + 1
-				if name then
-					-- print ('   ' .. name .. completionCount)
+		repeat
+			local name, description, rarity, icon, spellDescription,  _, _, firstComletionTime, completionCount = GetArtifactInfoByRace(raceIndex, artifactIndex)
+			artifactIndex = artifactIndex + 1
+			if name then
+				-- print ('   ' .. name .. completionCount)
+				
+				if completionCount > 0 then
 					
-					if completionCount > 0 then
-						
-						if rarity == 0 then
-							common = common + 1
-						else
-							rare = rare + 1
-						end
-						
-						total = total + completionCount
+					if rarity == 0 then
+						common = common + 1
+					else
+						rare = rare + 1
 					end
 					
-				else				
-					done = true
-				end				
-			until done 
-			
-			
-			
-			print( "|cff666666" .. raceName .. "|r: "
-				.. common .. "/" .. Professor.ARTIFACT_COUNTS[raceIndex][1] .. ", "
-				.. "|cff9999ff" .. rare .. "/" .. Professor.ARTIFACT_COUNTS[raceIndex][2] .. "|r -- "
-				.. total .. " total")
-			
-		end
+					total = total + completionCount
+				end
+				
+			else				
+				done = true
+			end				
+		until done
 		
+		self.races[raceIndex] = {
+			name = raceName;
+			texture = raceTexture;
+			completedCommon = common;
+			completedRare = rare;
+			totalSolves = total;	
+		}
+	end
+end
+
+function Professor:Print()
+	if not self.races then
+		return
+	end
+	for id, race in ipairs(self.races) do
+		print( string.format("|T%s:0:0:0:0:64:64:0:38:0:38|t %s%s|r%s: %s%d%s/%s%d|r%s, %s%d%s/%s%d|r%s — %s%d|r%s total",
+			race.texture,
+			
+			self.COLORS.race,
+			race.name,
+			self.COLORS.text,
+			
+			self.COLORS.common,
+			race.completedCommon,
+			self.COLORS.text,
+			self.COLORS.common,
+			self.artifacts[id][1],
+			self.COLORS.text,
+			
+			self.COLORS.rare,
+			race.completedRare,
+			self.COLORS.text,
+			self.COLORS.rare,
+			self.artifacts[id][2],
+			self.COLORS.text,
+			
+			self.COLORS.total,
+			race.totalSolves,
+			self.COLORS.text
+		) )
+	end
+end
+
+function Professor:OnHistoryReady(event, ...)
+	if IsArtifactCompletionHistoryAvailable() then
+		self:LoadRaces()
+		self:Print()
 	self:UnregisterEvent("ARTIFACT_HISTORY_READY");
 	end
 end
@@ -91,7 +143,6 @@ function Professor:SlashProcessorFunction(input)
   self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady");
   
   RequestArtifactCompletionHistory()
-  
   
 
 end
