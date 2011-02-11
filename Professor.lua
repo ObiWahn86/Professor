@@ -23,13 +23,12 @@ Professor.COLORS = {
 
 Professor.Race = {}
 Professor.Artifact = {}
-function Professor.Race:new(id, name, icon, currency, keystone)
+function Professor.Race:new(id, name, icon, currency)
 	local o = {
 				id = id;
 				name = name;
 				icon = icon;
 				currency = currency;
-				keystone = keystone;
 				
 				totalCommon = 0;
 				totalRare = 0;
@@ -67,13 +66,14 @@ function Professor.Race:new(id, name, icon, currency, keystone)
 					self.completedCommon = 0
 					self.completedRare = 0
 					self.totalSolves = 0
-					
+
 					repeat
 						local name, description, rarity, icon, spellDescription,  _, _, firstComletionTime, completionCount = GetArtifactInfoByRace(self.id, artifactIndex)
+						
 						artifactIndex = artifactIndex + 1
 						if name then
+							
 							if completionCount > 0 then
-
 								self.artifacts[icon].firstComletionTime = firstComletionTime
 								self.artifacts[icon].solves = completionCount
 								
@@ -98,6 +98,7 @@ function Professor.Race:new(id, name, icon, currency, keystone)
 end
 
 function Professor.Artifact:new(name, icon, spellId, itemId, rare, fragments)
+		
 	local o = {
 		name = name;
 		icon = icon;
@@ -121,22 +122,26 @@ function Professor:LoadRaces()
 	local raceCount = GetNumArchaeologyRaces()
 	self.races = {}
 	
+	currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399}
+	
 	for raceIndex=1, raceCount do
-		local raceName, currencyId, raceTexture, raceItemID = GetArchaeologyRaceInfo(raceIndex)
-		local currencyName, _, currencyTexture = GetCurrencyInfo(currencyId)
+		local raceName, raceTexture, _, _ = GetArchaeologyRaceInfo(raceIndex)
 		
-		if Professor.artifactDB[currencyId] then
+		local currencyId = currencies[raceIndex]
+		
+		if currencyId then
+			local currencyName, _, currencyTexture = GetCurrencyInfo(currencyId)
+		
 			local currency = {
 				id = currencyId;
 				name = currencyName;
 				icon = currencyTexture;
 			}
-			local aRace = Professor.Race:new(raceIndex, raceName, raceTexture, currency, raceItemId)
+			local aRace = Professor.Race:new(raceIndex, raceName, raceTexture, currency)
 			
 			for i, artifact in ipairs( Professor.artifactDB[aRace.currency.id] ) do
 				local itemId, spellId, rarity, fragments = unpack(artifact)
 				local name, _, icon = GetSpellInfo(spellId)
-				
 				aRace:AddArtifact(name, icon, spellId, itemId, (rarity == 1), fragments)
 			end
 			
@@ -148,6 +153,7 @@ end
 
 
 function Professor:UpdateHistory()
+	
 	for raceIndex, race in ipairs(self.races) do
 		race:UpdateHistory()
 	end

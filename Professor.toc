@@ -1,13 +1,9 @@
 ## Interface: 40000
 ## Title: Professor
 ## Author: Anossov
-## Version: 0.3
+## Version: 0.3.1
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
-## X-Curse-Packaged-Version: v0.2
-## X-Curse-Project-Name: Professor
-## X-Curse-Project-ID: professor
-## X-Curse-Repository-ID: wow/professor/mainline
 
 embeds.xml
 Professor.lua
