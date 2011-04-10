@@ -305,6 +305,8 @@ Professor.artifactDB = {
     };
      [385] = {
       { 64377, 90608, 1, 150 },  -- Zin'rokh, Destroyer of Worlds
+      { 69824, 98588, 1, 100 },  -- Voodoo Figurine
+      { 69777, 98556, 1, 100 },  -- Haunted War Drum
 
       { 64348, 90429, 0,  35 },  -- Atal'ai Scepter
       { 64346, 90421, 0,  35 },  -- Bracelet of Jade and Coins
@@ -322,8 +324,11 @@ Professor.artifactDB = {
       { 63115, 88262, 0,  27 },  -- Zandalari Voodoo Doll
     };
      [393] = {
+      { 69764, 98533, 1, 150 },  -- Extinct Turtle Shell
       { 60955, 89693, 1,  85 },  -- Fossilized Hatchling
       { 60954, 90619, 1, 100 },  -- Fossilized Raptor
+      { 69821, 98582, 1, 120 },  -- Pterrodax Hatchling
+      { 69776, 98560, 1, 100 },  -- Ancient Amber
 
       { 64355, 90452, 0,  35 },  -- Ancient Shark Jaws
       { 63121, 88930, 0,  25 },  -- Beautiful Preserved Fern
@@ -394,6 +399,7 @@ Professor.artifactDB = {
     };
      [399] = {
       { 64460, 90997, 1, 130 },  -- Nifflevar Bearded Axe
+      { 69775, 98569, 1, 100 },  -- Vrykul Drinking Horn
 
       { 64464, 91014, 0,  45 },  -- Fanged Cloak Pin
       { 64462, 91012, 0,  45 },  -- Flint Striker
