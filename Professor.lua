@@ -3,9 +3,9 @@ local _VERSION = GetAddOnMetadata('Professor', 'version')
 
 local Professor = LibStub("AceAddon-3.0"):NewAddon("Professor", "AceConsole-3.0", "AceEvent-3.0")
 
-Professor:RegisterChatCommand("prof", "SlashProcessorFunction")
-
 function Professor:OnInitialize()
+
+	Professor:RegisterChatCommand("prof", "SlashProcessorFunction")
     -- self.detailedframe = CreateFrame("Frame", "ProfessorDetailedFrame", UIParent, "ProfessorDetailedContainer")
     -- self.detailedframe:Show()
 end
