@@ -237,8 +237,10 @@ end
 function Professor:SlashProcessorFunction(input)
 
     local _, _, hasArchaeology = GetProfessions()
-    if not hasArchaeology then return end
-
+    if not hasArchaeology then
+		print("You do not have Archaeology learned as a secondary profession.")
+		return
+	end
 
     self.action = Professor.PrintSummary
 
