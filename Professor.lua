@@ -191,8 +191,15 @@ end
 
 function Professor:PrintSummary()
 
+	
+	totalSolves = 0
+
     for id, race in ipairs(self.races) do
         if race.totalCommon > 0 or self.totalRare > 0 then
+
+			-- Keep track of how many total we've solved
+			totalSolves = race.totalSolves + totalSolves
+
             print( string.format("%s|r%s: %s%d%s/%s%d|r%s, %s%d%s/%s%d|r%s — %s%d|r%s total",
 
                 race:GetString(),
@@ -215,6 +222,8 @@ function Professor:PrintSummary()
             ) )
         end
     end
+
+	print("Total Solves: " .. totalSolves)
 
 end
 
