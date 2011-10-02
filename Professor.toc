@@ -5,5 +5,9 @@
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
 
+#@no-lib-strip@
+# Libraries
 embeds.xml
+#@end-no-lib-strip@
+
 Professor.lua
