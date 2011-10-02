@@ -1,13 +1,10 @@
 local _VERSION = GetAddOnMetadata('Professor', 'version')
 
+local addon	= LibStub("AceAddon-3.0"):NewAddon("Professor", "AceConsole-3.0", "AceEvent-3.0")
+_G.Professor = addon
 
-local Professor = LibStub("AceAddon-3.0"):NewAddon("Professor", "AceConsole-3.0", "AceEvent-3.0")
-
-function Professor:OnInitialize()
-
-	Professor:RegisterChatCommand("prof", "SlashProcessorFunction")
-    -- self.detailedframe = CreateFrame("Frame", "ProfessorDetailedFrame", UIParent, "ProfessorDetailedContainer")
-    -- self.detailedframe:Show()
+function addon:OnInitialize()
+	addon:RegisterChatCommand("prof", "SlashProcessorFunction")
 end
 
 
@@ -118,7 +115,7 @@ end
 
 
 
-function Professor:LoadRaces()
+function addon:LoadRaces()
     local raceCount = GetNumArchaeologyRaces()
     self.races = {}
 
@@ -152,7 +149,7 @@ function Professor:LoadRaces()
 end
 
 
-function Professor:UpdateHistory()
+function addon:UpdateHistory()
 
     for raceIndex, race in ipairs(self.races) do
         race:UpdateHistory()
@@ -161,7 +158,7 @@ end
 
 
 
-function Professor:PrintDetailed(raceId)
+function addon:PrintDetailed(raceId)
 
     local race = self.races[raceId]
 
@@ -189,7 +186,7 @@ function Professor:PrintDetailed(raceId)
 
 end
 
-function Professor:PrintSummary()
+function addon:PrintSummary()
 
 	
 	totalSolves = 0
@@ -227,7 +224,7 @@ function Professor:PrintSummary()
 
 end
 
-function Professor:OnHistoryReady(event, ...)
+function addon:OnHistoryReady(event, ...)
     if IsArtifactCompletionHistoryAvailable() then
 
         if not self.races then
@@ -243,7 +240,7 @@ function Professor:OnHistoryReady(event, ...)
 end
 
 
-function Professor:SlashProcessorFunction(input)
+function addon:SlashProcessorFunction(input)
 
     local _, _, hasArchaeology = GetProfessions()
     if not hasArchaeology then
