@@ -1,0 +1,23 @@
+This tiny addon tracks your progress in archaeology, so you can easily find out what you're missing from "Diggerest" and "It Belongs in a Museum!" achievements.
+
+Usage: Type /prof
+
+**New in Professor 0.3:**
+Lists of every artifact per race.
+
+Usage:
+
+/prof detailed RACEID
+
+e.g. "/prof detailed 1" for Dwarves.
+
+**Race ids:**
+# Dwarves
+# Draenei
+# Fossils
+# Night Elves
+# Nerubians
+# Orcs
+# Tol'Vir
+# Trolls
+# Vrykul

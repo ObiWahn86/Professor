@@ -1,7 +1,7 @@
-## Interface: 40100
+## Interface: 40200
 ## Title: Professor
-## Author: Anossov
-## Version: 0.3.1
+## Author: Anossov, Ackis
+## Version: 0.3.2
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
 
