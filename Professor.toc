@@ -1,9 +1,13 @@
-## Interface: 40200
 ## Title: Professor
 ## Author: Anossov, Ackis
-## Version: 0.3.2
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
+
+## Interface: 40200
+## X-Compatible-With: 40200
+## Version: @project-version@
+## X-Revision: @project-abbreviated-hash@
+## X-Date: @file-date-iso@
 
 #@no-lib-strip@
 # Libraries
