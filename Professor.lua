@@ -267,24 +267,26 @@ function addon:SlashProcessorFunction(input)
 		return
 	end
 
-    self.action = Professor.PrintSummary
+	if not input then
+		self.action = Professor.PrintSummary
 
-    local state = nil
+		local state = nil
 
-    for token in string.gmatch(input, "[^%s]+") do
+		for token in string.gmatch(input, "[^%s]+") do
 
-        if state == 'detailed' then
-            local raceId = tonumber(token)
-            self.action = function () self:PrintDetailed(raceId) end
-        end
+			if state == 'detailed' then
+				local raceId = tonumber(token)
+				self.action = function () self:PrintDetailed(raceId) end
+			end
 
-        if token == 'detailed' then state = 'detailed' end
+			if token == 'detailed' then state = 'detailed' end
 
-    end
+		end
 
-    self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
+		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 
-    RequestArtifactCompletionHistory()
+		RequestArtifactCompletionHistory()
+	end
 
 end
 
@@ -844,8 +846,6 @@ end
 function addon:OnArtifactUpdate(event, ...)
 	RequestArtifactCompletionHistory()
 end
-
---
 
 function addon:CreateOptionsFrame()
 
