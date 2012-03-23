@@ -787,8 +787,6 @@ function addon:ToggleHide()
 	end
 end
 
---
-
 function addon:SetLocked(a)
 	Professor.options.lock = a
 end
@@ -800,8 +798,6 @@ function addon:ToggleLock()
 		self:SetLocked(true)
 	end
 end
-
---
 
 function addon:OnArtifcatHistoryReady(event, ...)
 	if IsArtifactCompletionHistoryAvailable() then
@@ -857,6 +853,11 @@ function addon:CreateOptionsFrame()
 	self:CreateOptionButton(self.OptionsFrame, 'prof_opt_hide', 10, 34, 150, "Hide window", function() addon:SetHide(true) end)
 
 	InterfaceOptions_AddCategory(self.OptionsFrame)
+
+	if LibStub:GetLibrary("LibAboutPanel", true) then
+		self.OptionsFrame["About"] = LibStub:GetLibrary("LibAboutPanel").new(addon.OptionsFrame.name, addon.OptionsFrame.name)
+	end
+
 end
 
 function addon:CreateOptionButton(parent, id, x, y, w, value, onClick)
