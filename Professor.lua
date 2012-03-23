@@ -601,7 +601,7 @@ function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 	b:SetMinMaxValues(0, 100)
 	b:SetValue(100)
 	b:SetOrientation("HORIZONTAL")
-	b:SetStatusBarTexture('Interface\TargetingFrame\UI-StatusBar', "ARTWORK")
+	b:SetStatusBarTexture([[Interface\TargetingFrame\UI-StatusBar]], "ARTWORK")
 	b:SetStatusBarColor(red, green, blue)
 	b.tt_race = race
 	b.tt_mode = mode
