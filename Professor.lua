@@ -267,7 +267,7 @@ function addon:SlashProcessorFunction(input)
 		return
 	end
 
-	if not input then
+	if not input or input == "" then
 		self.action = Professor.PrintSummary
 
 		local state = nil
@@ -464,12 +464,6 @@ Professor.artifactDB = {
     };
 }
 
-
---
---
---
-
-
 Professor.defaults = {
 	hide = false,
 	lock = false,
@@ -481,7 +475,6 @@ Professor.defaults = {
 	frameIconSize = 30,
 	frameMeterSize = 40,
 }
-
 
 Professor.options = {}
 
