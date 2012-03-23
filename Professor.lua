@@ -615,7 +615,7 @@ function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 	b.label:Show()
 	b.label:ClearAllPoints()
 	b.label:SetTextColor(1, 1, 1, 1)
-	b.label:SetFont('Fonts\FRIZQT__.TTF', 12, "OUTLINE")
+	b.label:SetFont([[Fonts\FRIZQT__.TTF]], 12, "OUTLINE")
 	b.label:SetPoint("LEFT", b, "LEFT", 0, 0)
 	b.label:SetText(" ")
 
