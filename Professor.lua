@@ -21,33 +21,33 @@ Professor.races = nil
 Professor.detailedframe = {}
 
 Professor.COLORS = {
-    text   = '|cffaaaaaa'
-    common = '|cffffffff'
-    rare   = '|cff66ccff'
-    total  = '|cffffffff'
+    text   = '|cffaaaaaa',
+    common = '|cffffffff',
+    rare   = '|cff66ccff',
+    total  = '|cffffffff',
 }
 
 Professor.Race = {}
 Professor.Artifact = {}
 function Professor.Race:new(id, name, icon, currency)
     local o = {
-                id = id
-                name = name
-                icon = icon
-                currency = currency
+                id = id,
+                name = name,
+                icon = icon,
+                currency = currency,
 
-                totalCommon = 0
-                totalRare = 0
+                totalCommon = 0,
+                totalRare = 0,
 
-                completedCommon = 0
-                completedRare = 0
-                totalSolves = 0
+                completedCommon = 0,
+                completedRare = 0,
+                totalSolves = 0,
 
-                artifacts = {}
+                artifacts = {},
 
                 GetString = function(self)
                     return string.format("|T%s:0:0:0:0:64:64:0:38:0:38|t %s%s|r", self.icon, _G['ORANGE_FONT_COLOR_CODE'], self.name)
-                end
+                end,
 
                 AddArtifact = function(self, name, icon, spellId, itemId, rare, fragments)
                     local anArtifact = Professor.Artifact:new(name, icon, spellId, itemId, rare, fragments)
@@ -61,7 +61,7 @@ function Professor.Race:new(id, name, icon, currency)
 
                     -- We can't identify artifacts by name, because in some locales the spell and artifact names are slightly different, and we can't use GetItemInfo because it's unreliable
                     self.artifacts[icon] = anArtifact
-                end
+                end,
 
                 UpdateHistory = function(self)
                     local artifactCount = GetNumArtifactsByRace(self.id)
@@ -95,7 +95,7 @@ function Professor.Race:new(id, name, icon, currency)
                             done = true
                         end
                     until done
-                end
+                end,
         }
 
     setmetatable(o, self)
@@ -585,15 +585,19 @@ function addon:CreateButton(x, y, w, h, texture, race, mode)
 	addon:Mouseify(b, true)
 
 	b:SetHitRectInsets(0, 0, 0, 0)
-	b:SetScript("OnEnter", function(bself) addon:ShowTooltip(bself.tt_race, bself.tt_mode); end)
-	b:SetScript("OnLeave", function() GameTooltip:Hide(); end)
+	b:SetScript("OnEnter", function(bself)
+		addon:ShowTooltip(bself.tt_race, bself.tt_mode)
+	end)
+	b:SetScript("OnLeave", function()
+		GameTooltip:Hide()
+	end)
 
 	return b
 end
 
 function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 
-	local p = Professor;
+	local p = Professor
 
 	local b = CreateFrame("StatusBar", nil, p.UIFrame)
 	b:SetPoint("TOPLEFT", x, 0-y)
@@ -618,8 +622,12 @@ function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 	addon:Mouseify(b)
 
 	b:SetHitRectInsets(0, 0, 0, 0)
-	b:SetScript("OnEnter", function(bself) addon:ShowTooltip(bself.tt_race, bself.tt_mode) end)
-	b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	b:SetScript("OnEnter", function(bself)
+		addon:ShowTooltip(bself.tt_race, bself.tt_mode)
+	end)
+	b:SetScript("OnLeave", function()
+		GameTooltip:Hide()
+	end)
 
 	return b
 end
