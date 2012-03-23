@@ -596,6 +596,9 @@ function addon:CreateButton(x, y, w, h, texture, race, mode)
 	return b
 end
 
+local BARTEXTURE = [[Interface\TargetingFrame\UI-StatusBar]]
+local FONTNAME = [[Fonts\FRIZQT__.TTF]]
+
 function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 
 	local p = Professor
@@ -607,7 +610,7 @@ function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 	b:SetMinMaxValues(0, 100)
 	b:SetValue(100)
 	b:SetOrientation("HORIZONTAL")
-	b:SetStatusBarTexture([[Interface\TargetingFrame\UI-StatusBar]], "ARTWORK")
+	b:SetStatusBarTexture(BARTEXTURE, "ARTWORK")
 	b:SetStatusBarColor(red, green, blue)
 	b.tt_race = race
 	b.tt_mode = mode
@@ -616,7 +619,7 @@ function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 	b.label:Show()
 	b.label:ClearAllPoints()
 	b.label:SetTextColor(1, 1, 1, 1)
-	b.label:SetFont([[Fonts\FRIZQT__.TTF]], 12, "OUTLINE")
+	b.label:SetFont(FONTNAME, 12, "OUTLINE")
 	b.label:SetPoint("LEFT", b, "LEFT", 0, 0)
 	b.label:SetText(" ")
 
