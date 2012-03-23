@@ -1,5 +1,5 @@
 ## Title: Professor
-## Author: Anossov, Ackis
+## Author: Anossov, Ackis, iamcal
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
 
