@@ -258,6 +258,23 @@ function addon:OnHistoryReady(event, ...)
     end
 end
 
+	-- Code snippet stolen from GearGuage by Torhal and butchered by Ackis
+	local function StrSplit(input)
+		if not input then
+			return nil, nil
+		end
+		local arg1, arg2, var1
+
+		arg1, var1 = input:match("^([^%s]+)%s*(.*)$")
+		arg1 = (arg1 and arg1:lower() or input:lower())
+
+		if var1 then
+			local var2
+			arg2, var2 = var1:match("^([^%s]+)%s*(.*)$")
+			arg2 = (arg2 and arg2:lower() or var1:lower())
+		end
+		return arg1, arg2
+	end
 
 function addon:SlashProcessorFunction(input)
 
@@ -267,31 +284,34 @@ function addon:SlashProcessorFunction(input)
 		return
 	end
 
-	if not input or input == "" then
+	local arg1, arg2 = StrSplit(input)
+
+	-- No arguments, print off summary
+	if not arg1 or (arg1 and arg1:trim() == "") then
 		self.action = Professor.PrintSummary
 
 		local state = nil
 
-		for token in string.gmatch(input, "[^%s]+") do
-
-			if state == 'detailed' then
-				local raceId = tonumber(token)
-				self.action = function () self:PrintDetailed(raceId) end
-			end
-
-			if token == 'detailed' then state = 'detailed' end
-
-		end
-
 		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 
 		RequestArtifactCompletionHistory()
-	elseif input == "show" or input == "Show" then
+	-- First arg is detailed, second is the race number, print off detailed summary for that
+	elseif arg1 == "detailed" or arg1 == "Detailed" then
+		for token in string.gmatch(arg2, "[^%s]+") do
+			local raceId = tonumber(token)
+			self.action = function () self:PrintDetailed(raceId) end
+		end
+		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
+
+		RequestArtifactCompletionHistory()
+	elseif arg1 == "show" or arg1 == "Show" then
 		addon:SetHide(false)
-	elseif input == "hide" or input == "Hide" then
+	elseif arg1 == "hide" or arg1 == "Hide" then
 		addon:SetHide(true)
-	elseif input == "toggle" or input == "Toggle" then
+	elseif arg1 == "toggle" or arg1 == "Toggle" then
 		addon:ToggleHide()
+	else
+
 	end
 
 end
