@@ -748,6 +748,14 @@ function addon:ShowMenu()
 		disabled = false,
 	})
 
+	table.insert(menuList, {
+		text = "About",
+		func = function() InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.About) end,
+		isTitle = false,
+		checked = false,
+		disabled = false,
+	})
+
 	local locked = false
 	if (Professor.options.lock) then locked = true end
 
