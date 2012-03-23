@@ -286,6 +286,12 @@ function addon:SlashProcessorFunction(input)
 		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 
 		RequestArtifactCompletionHistory()
+	elseif input == "show" or input == "Show" then
+		addon:SetHide(false)
+	elseif input == "hide" or input == "Hide" then
+		addon:SetHide(true)
+	elseif input == "toggle" or input == "Toggle" then
+		addon:ToggleHide()
 	end
 
 end
