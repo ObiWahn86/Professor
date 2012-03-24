@@ -172,9 +172,12 @@ function addon:UpdateHistory()
     end
 end
 
-function addon:PrintDetailed(raceId)
-
-    local race = self.races[raceId]
+local function PrintDetailed(raceId)
+	if not raceId then
+		addon:Print("Please specify a Race ID to print a detailed summary of.")
+		return
+	end
+    local race = addon.races[raceId]
 
     print()
     print(race:GetString())
@@ -190,7 +193,7 @@ function addon:PrintDetailed(raceId)
         elseif artifact.rare then
             table.insert(rare, "  |cff3333aa+|r  " .. link )
         else
-            table.insert(therest, "  |cff33aa33+|r  " .. link .. self.COLORS.text .. "×" .. artifact.solves .. "|r" )
+            table.insert(therest, "  |cff33aa33+|r  " .. link .. addon.COLORS.text .. "×" .. artifact.solves .. "|r" )
         end
     end
 
@@ -200,13 +203,13 @@ function addon:PrintDetailed(raceId)
 
 end
 
-function addon:PrintSummary()
+local function PrintSummary()
 
 	
 	totalSolves = 0
 
-    for id, race in ipairs(self.races) do
-        if race.totalCommon > 0 or self.totalRare > 0 then
+    for id, race in ipairs(addon.races) do
+        if race.totalCommon > 0 or addon.totalRare > 0 then
 
 			-- Keep track of how many total we've solved
 			totalSolves = race.totalSolves + totalSolves
@@ -215,21 +218,21 @@ function addon:PrintSummary()
 
                 race:GetString(),
 
-                self.COLORS.text,
+                addon.COLORS.text,
 
-                self.COLORS.common, race.completedCommon,
-                self.COLORS.text,
-                self.COLORS.common, race.totalCommon,
+                addon.COLORS.common, race.completedCommon,
+                addon.COLORS.text,
+                addon.COLORS.common, race.totalCommon,
 
-                self.COLORS.text,
+                addon.COLORS.text,
 
-                self.COLORS.rare, race.completedRare,
-                self.COLORS.text,
-                self.COLORS.rare, race.totalRare,
+                addon.COLORS.rare, race.completedRare,
+                addon.COLORS.text,
+                addon.COLORS.rare, race.totalRare,
 
-                self.COLORS.text,
+                addon.COLORS.text,
 
-                self.COLORS.total, race.totalSolves, self.COLORS.text
+                addon.COLORS.total, race.totalSolves, addon.COLORS.text
             ) )
         end
     end
@@ -280,27 +283,21 @@ function addon:SlashProcessorFunction(input)
 	end
 
 	local arg1, arg2 = StrSplit(input)
-	print(arg1)
-	print(arg2)
 
 	-- No arguments, print off summary
 	if not arg1 or (arg1 and arg1:trim() == "") then
-		self.action = Professor.PrintSummary
+		self.action = PrintSummary
 
 		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 
 		RequestArtifactCompletionHistory()
 	-- First arg is detailed, second is the race number, print off detailed summary for that
 	elseif arg1 == "detailed" or arg1 == "Detailed" then
-		if not arg2 and (arg2 and arg2:trim() == "") then
-			print("Please specify a Race ID to print a detailed summary of.")
-		else
-			local raceId = tonumber(arg2)
-			self.action = function () self:PrintDetailed(raceId) end
-			self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
+		local raceId = tonumber(arg2)
+		self.action = function () PrintDetailed(raceId) end
+		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 
-			RequestArtifactCompletionHistory()
-		end
+		RequestArtifactCompletionHistory()
 	elseif arg1 == "show" or arg1 == "Show" then
 		addon:SetHide(false)
 	elseif arg1 == "hide" or arg1 == "Hide" then
