@@ -557,7 +557,7 @@ function addon:BuildFrame()
 	p.UIFrame.texture:SetTexture(0, 0, 0, 0.5)
 
 	p.Cover = CreateFrame("Button", nil, p.UIFrame)
-	p.Cover:SetFrameLevel(100)
+	--p.Cover:SetFrameLevel(100)
 	p.Cover:SetAllPoints()
 	addon:Mouseify(p.Cover)
 
@@ -566,15 +566,15 @@ function addon:BuildFrame()
 	for raceIndex, race in ipairs(self.races) do
 
 		race.iconBtn = p:CreateButton(cfg.framePadding, y, cfg.frameIconSize, cfg.frameIconSize, race.icon, raceIndex, 0)
-		race.iconBtn:SetFrameLevel(101)
+		--race.iconBtn:SetFrameLevel(101)
 		race.bar1bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.5, raceIndex, 1)
-		race.bar1bg:SetFrameLevel(101)
+		--race.bar1bg:SetFrameLevel(101)
 		race.bar1fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 1, 1, 1, raceIndex, 1)
-		race.bar1fg:SetFrameLevel(102)
+		--race.bar1fg:SetFrameLevel(102)
 		race.bar2bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.8, raceIndex, 2)
-		race.bar2bg:SetFrameLevel(101)
+		--race.bar2bg:SetFrameLevel(101)
 		race.bar2fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 0, 0, 0.8, raceIndex, 2)
-		race.bar2fg:SetFrameLevel(102)
+		--race.bar2fg:SetFrameLevel(102)
 
 		y = y + cfg.framePadding + cfg.frameIconSize
 	end
