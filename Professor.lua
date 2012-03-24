@@ -287,8 +287,6 @@ function addon:SlashProcessorFunction(input)
 	if not arg1 or (arg1 and arg1:trim() == "") then
 		self.action = Professor.PrintSummary
 
-		local state = nil
-
 		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 
 		RequestArtifactCompletionHistory()
