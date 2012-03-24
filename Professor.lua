@@ -285,6 +285,7 @@ function addon:SlashProcessorFunction(input)
 	end
 
 	local arg1, arg2 = StrSplit(input)
+	print(arg1)
 	print(arg2)
 
 	-- No arguments, print off summary
@@ -633,12 +634,11 @@ function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 	b.tt_mode = mode
 
 	b.label = b:CreateFontString(nil, "OVERLAY")
-	b.label:Show()
-	b.label:ClearAllPoints()
 	b.label:SetTextColor(1, 1, 1, 1)
 	b.label:SetFont(FONTNAME, 12, "OUTLINE")
 	b.label:SetPoint("LEFT", b, "LEFT", 0, 0)
 	b.label:SetText(" ")
+	b.label:Show()
 
 	addon:Mouseify(b)
 
