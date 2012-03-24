@@ -13,12 +13,14 @@ function addon:OnInitialize()
 	self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
 	self:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
 	self:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
+	self:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin");
 	addon:OnArtifactUpdate()
 end
 
 
 Professor.races = nil
 Professor.detailedframe = {}
+Professor.canShow = false
 
 Professor.COLORS = {
     text   = '|cffaaaaaa',
@@ -577,12 +579,7 @@ function addon:BuildFrame()
 	end
 
 	p.UIFrame:SetHeight(y)
-
-	if (cfg.hide == true) then 
-		p.UIFrame:Hide()
-	else
-		p.UIFrame:Show()
-	end
+	p.UIFrame:Hide()
 end
 
 function addon:CreateButton(x, y, w, h, texture, race, mode)
@@ -803,7 +800,11 @@ function addon:SetHide(a)
 	if (a) then
 		Professor.UIFrame:Hide()
 	else
-		Professor.UIFrame:Show()
+		if (Professor.canShow) then
+			Professor.UIFrame:Show()
+		else
+			Professor.UIFrame:Hide()
+		end
 	end
 end
 
@@ -905,4 +906,16 @@ function addon:CreateOptionButton(parent, id, x, y, w, value, onClick)
 
 	b:SetText(value)
 	b:EnableMouse()
+end
+
+function addon:OnPlayerLogin()
+
+	local name = GetSpellInfo(80451);
+	if (name) then
+		local count = GetSpellCount(name)
+		if (count) then
+			Professor.canShow = true
+		end
+	end
+	self:SetHide(Professor.options.hide)
 end
