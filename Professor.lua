@@ -16,7 +16,6 @@ function addon:OnInitialize()
 	addon:OnArtifactUpdate()
 end
 
-
 Professor.races = nil
 Professor.detailedframe = {}
 
@@ -29,6 +28,7 @@ Professor.COLORS = {
 
 Professor.Race = {}
 Professor.Artifact = {}
+
 function Professor.Race:new(id, name, icon, currency)
     local o = {
                 id = id,
@@ -132,8 +132,6 @@ function Professor.Artifact:new(name, icon, spellId, itemId, rare, fragments)
     return o
 end
 
-
-
 function addon:LoadRaces()
     local raceCount = GetNumArchaeologyRaces()
     self.races = {}
@@ -167,15 +165,12 @@ function addon:LoadRaces()
     end
 end
 
-
 function addon:UpdateHistory()
 
     for raceIndex, race in ipairs(self.races) do
         race:UpdateHistory()
     end
 end
-
-
 
 function addon:PrintDetailed(raceId)
 
@@ -258,23 +253,23 @@ function addon:OnHistoryReady(event, ...)
     end
 end
 
-	-- Code snippet stolen from GearGuage by Torhal and butchered by Ackis
-	local function StrSplit(input)
-		if not input then
-			return nil, nil
-		end
-		local arg1, arg2, var1
-
-		arg1, var1 = input:match("^([^%s]+)%s*(.*)$")
-		arg1 = (arg1 and arg1:lower() or input:lower())
-
-		if var1 then
-			local var2
-			arg2, var2 = var1:match("^([^%s]+)%s*(.*)$")
-			arg2 = (arg2 and arg2:lower() or var1:lower())
-		end
-		return arg1, arg2
+-- Code snippet stolen from GearGuage by Torhal and butchered by Ackis
+local function StrSplit(input)
+	if not input then
+		return nil, nil
 	end
+	local arg1, arg2, var1
+
+	arg1, var1 = input:match("^([^%s]+)%s*(.*)$")
+	arg1 = (arg1 and arg1:lower() or input:lower())
+
+	if var1 then
+		local var2
+		arg2, var2 = var1:match("^([^%s]+)%s*(.*)$")
+		arg2 = (arg2 and arg2:lower() or var1:lower())
+	end
+	return arg1, arg2
+end
 
 function addon:SlashProcessorFunction(input)
 
@@ -554,7 +549,7 @@ function addon:BuildFrame()
 	p.UIFrame.texture:SetTexture(0, 0, 0, 0.5)
 
 	p.Cover = CreateFrame("Button", nil, p.UIFrame)
-	--p.Cover:SetFrameLevel(100)
+	p.Cover:SetFrameLevel(100)
 	p.Cover:SetAllPoints()
 	addon:Mouseify(p.Cover)
 
@@ -563,15 +558,15 @@ function addon:BuildFrame()
 	for raceIndex, race in ipairs(self.races) do
 
 		race.iconBtn = p:CreateButton(cfg.framePadding, y, cfg.frameIconSize, cfg.frameIconSize, race.icon, raceIndex, 0)
-		--race.iconBtn:SetFrameLevel(101)
+		race.iconBtn:SetFrameLevel(101)
 		race.bar1bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.5, raceIndex, 1)
-		--race.bar1bg:SetFrameLevel(101)
+		race.bar1bg:SetFrameLevel(101)
 		race.bar1fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 1, 1, 1, raceIndex, 1)
-		--race.bar1fg:SetFrameLevel(102)
+		race.bar1fg:SetFrameLevel(102)
 		race.bar2bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.8, raceIndex, 2)
-		--race.bar2bg:SetFrameLevel(101)
+		race.bar2bg:SetFrameLevel(101)
 		race.bar2fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 0, 0, 0.8, raceIndex, 2)
-		--race.bar2fg:SetFrameLevel(102)
+		race.bar2fg:SetFrameLevel(102)
 
 		y = y + cfg.framePadding + cfg.frameIconSize
 	end
