@@ -317,10 +317,6 @@ function addon:SlashProcessorFunction(input)
 
 end
 
-
-
-
-
 -- Exported from Wowhead. { [racialCurrencyId] = { { itemId, spellId, rarity, fragments }, ... }, ... }
 Professor.artifactDB = {
      [384] = {
