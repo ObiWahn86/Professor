@@ -182,7 +182,7 @@ function addon:PrintDetailed(raceId)
     local race = self.races[raceId]
 
     print()
-    print( race:GetString() )
+    print(race:GetString())
 
     local incomplete, rare, therest = {}, {}, {}
 
@@ -285,6 +285,7 @@ function addon:SlashProcessorFunction(input)
 	end
 
 	local arg1, arg2 = StrSplit(input)
+	print(arg2)
 
 	-- No arguments, print off summary
 	if not arg1 or (arg1 and arg1:trim() == "") then
@@ -297,21 +298,21 @@ function addon:SlashProcessorFunction(input)
 		RequestArtifactCompletionHistory()
 	-- First arg is detailed, second is the race number, print off detailed summary for that
 	elseif arg1 == "detailed" or arg1 == "Detailed" then
-		for token in string.gmatch(arg2, "[^%s]+") do
-			local raceId = tonumber(token)
+		if not arg2 and (arg2 and arg2:trim() == "") then
+			print("Please specify a Race ID to print a detailed summary of.")
+		else
+			local raceId = tonumber(arg2)
 			self.action = function () self:PrintDetailed(raceId) end
-		end
-		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
+			self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 
-		RequestArtifactCompletionHistory()
+			RequestArtifactCompletionHistory()
+		end
 	elseif arg1 == "show" or arg1 == "Show" then
 		addon:SetHide(false)
 	elseif arg1 == "hide" or arg1 == "Hide" then
 		addon:SetHide(true)
 	elseif arg1 == "toggle" or arg1 == "Toggle" then
 		addon:ToggleHide()
-	else
-
 	end
 
 end
