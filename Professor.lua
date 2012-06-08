@@ -280,7 +280,7 @@ function addon:SlashProcessorFunction(input)
 
     local _, _, hasArchaeology = GetProfessions()
     if not hasArchaeology then
-		print("You do not have Archaeology learned as a secondary profession.")
+		addon:Print("You do not have Archaeology learned as a secondary profession.")
 		return
 	end
 
@@ -288,17 +288,15 @@ function addon:SlashProcessorFunction(input)
 
 	-- No arguments, print off summary
 	if not arg1 or (arg1 and arg1:trim() == "") then
+		addon:Print("Acceptable commands are: detailed, show, hide, toggle, help")
 		self.action = PrintSummary
-
 		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
-
 		RequestArtifactCompletionHistory()
 	-- First arg is detailed, second is the race number, print off detailed summary for that
 	elseif arg1 == "detailed" or arg1 == "Detailed" then
 		local raceId = tonumber(arg2)
 		self.action = function () PrintDetailed(raceId) end
 		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
-
 		RequestArtifactCompletionHistory()
 	elseif arg1 == "show" or arg1 == "Show" then
 		addon:SetHide(false)
@@ -306,6 +304,15 @@ function addon:SlashProcessorFunction(input)
 		addon:SetHide(true)
 	elseif arg1 == "toggle" or arg1 == "Toggle" then
 		addon:ToggleHide()
+	elseif arg1 == "help" or arg1 == "Help" then
+		addon:Print("Professor will display detailed information about what archaeology solves you have completed and are missing.")
+		addon:Print("Acceptable slash commands are: ")
+		addon:Print("None - Prints out a summary by type of the total number of solves you have completed.")
+		addon:Print("Detailed X - Where X is from 1 to 9, it will print out detailed information about that specific race.  E.G. /prof detailed 2 will print out detailed information about Draenei solves.")
+		addon:Print("Show - Shows the GUI.")
+		addon:Print("Hide - Hides the GUI.")
+		addon:Print("Toggle - Toggles the display of the GUI.")
+		addon:Print("Help - This help screen.")
 	end
 
 end
