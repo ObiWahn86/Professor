@@ -206,7 +206,6 @@ end
 
 local function PrintSummary()
 
-	
 	totalSolves = 0
 
     for id, race in ipairs(addon.races) do
@@ -526,7 +525,9 @@ end
 function addon:BuildFrame()
 
 	-- need races before we create icons
-	addon:LoadRaces()
+	--addon:LoadRaces()
+	self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
+	RequestArtifactCompletionHistory()
 
 	local cfg = Professor.options
 	local p = Professor
