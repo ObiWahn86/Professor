@@ -3,6 +3,8 @@ local _VERSION = GetAddOnMetadata('Professor', 'version')
 local addon	= LibStub("AceAddon-3.0"):NewAddon("Professor", "AceConsole-3.0", "AceEvent-3.0")
 _G.Professor = addon
 
+addon.Frame = nil
+
 function addon:OnInitialize()
 	addon:RegisterChatCommand("prof", "SlashProcessorFunction")
 
@@ -497,7 +499,7 @@ function addon:LoadOptions()
 	_G.ProfessorDB = _G.ProfessorDB or {}
 
 	local db = _G.ProfessorDB
-	local p = Professor
+	local p = Professor.Frame
 
 	Professor.options = {}
 	for k,v in pairs(p.defaults) do
@@ -511,7 +513,7 @@ end
 
 function addon:SaveOptions()
 
-	local p = Professor
+	local p = Professor.Frame
 	local cfg = Professor.options
 
 	local point, relativeTo, relativePoint, xOfs, yOfs = p.UIFrame:GetPoint()
@@ -530,51 +532,52 @@ function addon:BuildFrame()
 	RequestArtifactCompletionHistory()
 
 	local cfg = Professor.options
-	local p = Professor
+	local p = Professor.Frame
+	if not p then
+		p.FrameWidth = (cfg.framePadding * 4) + (cfg.frameIconSize) + (cfg.frameMeterSize * 2)
 
-	p.FrameWidth = (cfg.framePadding * 4) + (cfg.frameIconSize) + (cfg.frameMeterSize * 2)
+		p.UIFrame = CreateFrame("Frame", nil, UIParent)
+		p.UIFrame:SetFrameStrata("BACKGROUND")
+		p.UIFrame:SetWidth(p.FrameWidth)
+		p.UIFrame:SetHeight(100)
+		p.UIFrame:SetPoint(cfg.frameRef, cfg.frameX, cfg.frameY)
+		p.UIFrame:SetMovable(true)
 
-	p.UIFrame = CreateFrame("Frame", nil, UIParent)
-	p.UIFrame:SetFrameStrata("BACKGROUND")
-	p.UIFrame:SetWidth(p.FrameWidth)
-	p.UIFrame:SetHeight(100)
-	p.UIFrame:SetPoint(cfg.frameRef, cfg.frameX, cfg.frameY)
-	p.UIFrame:SetMovable(true)
+		p.UIFrame.texture = p.UIFrame:CreateTexture()
+		p.UIFrame.texture:SetAllPoints(p.UIFrame)
+		p.UIFrame.texture:SetTexture(0, 0, 0, 0.5)
 
-	p.UIFrame.texture = p.UIFrame:CreateTexture()
-	p.UIFrame.texture:SetAllPoints(p.UIFrame)
-	p.UIFrame.texture:SetTexture(0, 0, 0, 0.5)
+		p.Cover = CreateFrame("Button", nil, p.UIFrame)
+		p.Cover:SetFrameLevel(100)
+		p.Cover:SetAllPoints()
+		addon:Mouseify(p.Cover)
 
-	p.Cover = CreateFrame("Button", nil, p.UIFrame)
-	p.Cover:SetFrameLevel(100)
-	p.Cover:SetAllPoints()
-	addon:Mouseify(p.Cover)
+		local y = cfg.framePadding
 
-	local y = cfg.framePadding
+		for raceIndex, race in ipairs(self.races) do
 
-	for raceIndex, race in ipairs(self.races) do
+			race.iconBtn = p:CreateButton(cfg.framePadding, y, cfg.frameIconSize, cfg.frameIconSize, race.icon, raceIndex, 0)
+			race.iconBtn:SetFrameLevel(101)
+			race.bar1bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.5, raceIndex, 1)
+			race.bar1bg:SetFrameLevel(101)
+			race.bar1fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 1, 1, 1, raceIndex, 1)
+			race.bar1fg:SetFrameLevel(102)
+			race.bar2bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.8, raceIndex, 2)
+			race.bar2bg:SetFrameLevel(101)
+			race.bar2fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 0, 0, 0.8, raceIndex, 2)
+			race.bar2fg:SetFrameLevel(102)
 
-		race.iconBtn = p:CreateButton(cfg.framePadding, y, cfg.frameIconSize, cfg.frameIconSize, race.icon, raceIndex, 0)
-		race.iconBtn:SetFrameLevel(101)
-		race.bar1bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.5, raceIndex, 1)
-		race.bar1bg:SetFrameLevel(101)
-		race.bar1fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 1, 1, 1, raceIndex, 1)
-		race.bar1fg:SetFrameLevel(102)
-		race.bar2bg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize, cfg.frameIconSize, 0.5, 0.5, 0.8, raceIndex, 2)
-		race.bar2bg:SetFrameLevel(101)
-		race.bar2fg = p:CreateBar(cfg.framePadding + cfg.framePadding + cfg.frameIconSize + cfg.framePadding + cfg.frameMeterSize, y, cfg.frameMeterSize / 2, cfg.frameIconSize, 0, 0, 0.8, raceIndex, 2)
-		race.bar2fg:SetFrameLevel(102)
+			y = y + cfg.framePadding + cfg.frameIconSize
+		end
 
-		y = y + cfg.framePadding + cfg.frameIconSize
+		p.UIFrame:SetHeight(y)
+		p.UIFrame:Hide()
 	end
-
-	p.UIFrame:SetHeight(y)
-	p.UIFrame:Hide()
 end
 
 function addon:CreateButton(x, y, w, h, texture, race, mode)
 
-	local p = Professor
+	local p = Professor.Frame
 
 	local b = CreateFrame("Button", nil, p.UIFrame)
 	b:SetPoint("TOPLEFT", x, 0-y)
@@ -606,7 +609,7 @@ local FONTNAME = [[Fonts\FRIZQT__.TTF]]
 
 function addon:CreateBar(x, y, w, h, red, green, blue, race, mode)
 
-	local p = Professor
+	local p = Professor.Frame
 
 	local b = CreateFrame("StatusBar", nil, p.UIFrame)
 	b:SetPoint("TOPLEFT", x, 0-y)
@@ -656,7 +659,7 @@ function addon:Mouseify(f, is_button)
 end
 
 function addon:OnDragStart(frame)
-	local p = Professor
+	local p = Professor.Frame
 	local cfg = Professor.options
 
 	if (cfg.lock == false) then
@@ -668,7 +671,7 @@ function addon:OnDragStart(frame)
 end
 
 function addon:OnDragStop(frame)
-	local p = Professor
+	local p = Professor.Frame
 	p.UIFrame:StopMovingOrSizing()
 	p.UIFrame.isMoving = false
 end
