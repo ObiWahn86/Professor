@@ -10,10 +10,10 @@ function addon:OnInitialize()
 	addon:BuildFrame()
 	addon:CreateOptionsFrame()
 
-	self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
-	self:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
-	self:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
-	self:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin");
+	addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
+	addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
+	addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
+	addon:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin");
 	addon:OnArtifactUpdate()
 end
 
@@ -21,7 +21,7 @@ Professor.races = nil
 Professor.detailedframe = {}
 Professor.canShow = false
 
-Professor.COLORS = {
+Professor.COLOURS = {
     text   = '|cffaaaaaa',
     common = '|cffffffff',
     rare   = '|cff66ccff',
@@ -59,7 +59,6 @@ function Professor.Race:new(id, name, icon, currency)
                     else
                         self.totalCommon = self.totalCommon + 1
                     end
-
 
                     -- We can't identify artifacts by name, because in some locales the spell and artifact names are slightly different, and we can't use GetItemInfo because it's unreliable
                     self.artifacts[icon] = anArtifact
@@ -195,7 +194,7 @@ local function PrintDetailed(raceId)
         elseif artifact.rare then
             table.insert(rare, "  |cff3333aa+|r  " .. link )
         else
-            table.insert(therest, "  |cff33aa33+|r  " .. link .. addon.COLORS.text .. "×" .. artifact.solves .. "|r" )
+            table.insert(therest, "  |cff33aa33+|r  " .. link .. addon.COLOURS.text .. "×" .. artifact.solves .. "|r" )
         end
     end
 
@@ -217,24 +216,17 @@ local function PrintSummary()
 			totalSolves = race.totalSolves + totalSolves
 
             print( string.format("%s|r%s: %s%d%s/%s%d|r%s, %s%d%s/%s%d|r%s — %s%d|r%s total",
-
                 race:GetString(),
-
-                addon.COLORS.text,
-
-                addon.COLORS.common, race.completedCommon,
-                addon.COLORS.text,
-                addon.COLORS.common, race.totalCommon,
-
-                addon.COLORS.text,
-
-                addon.COLORS.rare, race.completedRare,
-                addon.COLORS.text,
-                addon.COLORS.rare, race.totalRare,
-
-                addon.COLORS.text,
-
-                addon.COLORS.total, race.totalSolves, addon.COLORS.text
+                addon.COLOURS.text,
+                addon.COLOURS.common, race.completedCommon,
+                addon.COLOURS.text,
+                addon.COLOURS.common, race.totalCommon,
+                addon.COLOURS.text,
+                addon.COLOURS.rare, race.completedRare,
+                addon.COLOURS.text,
+                addon.COLOURS.rare, race.totalRare,
+                addon.COLOURS.text,
+                addon.COLOURS.total, race.totalSolves, addon.COLOURS.text
             ) )
         end
     end
@@ -534,7 +526,7 @@ end
 function addon:BuildFrame()
 
 	-- need races before we create icons
-	self:LoadRaces()
+	addon:LoadRaces()
 
 	local cfg = Professor.options
 	local p = Professor
