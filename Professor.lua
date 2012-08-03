@@ -477,7 +477,18 @@ Professor.artifactDB = {
       { 64654, 91780, 0,  45 },  -- Soapstone Scarab Necklace
       { 64655, 91782, 0,  45 },  -- Tiny Oasis Mosaic
     },
+	 [676] = {
+	  { 89685, 113981, 1, 180 },  -- Spear of Xuen
+	  { 89684, 113980, 1, 180 },  -- Umbrella of Chi-Ji
 
+	  { 79903, 113977, 0,  50 },  -- Apothecary Tins
+	},
+	 [677] = {
+	  { 89614, 113993, 1, 180 },  -- Anatomical Dummy
+	  { 89611, 113992, 1, 180 },  -- Quilen Statuette
+	},
+	 [0] = {
+	},
 }
 
 Professor.defaults = {
