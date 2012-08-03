@@ -138,9 +138,9 @@ function addon:LoadRaces()
     local raceCount = GetNumArchaeologyRaces()
     self.races = {}
 
-    currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399}
+    currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 0, 676, 677}
 
-    for raceIndex=1, raceCount do
+    for raceIndex = 1, raceCount do
         local raceName, raceTexture, _, _ = GetArchaeologyRaceInfo(raceIndex)
 
         local currencyId = currencies[raceIndex]
@@ -477,6 +477,7 @@ Professor.artifactDB = {
       { 64654, 91780, 0,  45 },  -- Soapstone Scarab Necklace
       { 64655, 91782, 0,  45 },  -- Tiny Oasis Mosaic
     },
+
 }
 
 Professor.defaults = {
