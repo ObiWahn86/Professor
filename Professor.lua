@@ -881,7 +881,7 @@ end
 
 function addon:CreateOptionButton(parent, id, x, y, w, value, onClick)
 
-	local b = CreateFrame("Button", id, parent, "UIPanelButtonTemplate2")
+	local b = CreateFrame("Button", id, parent, "UIPanelButtonTemplate")
 	b:SetPoint("TOPLEFT", x, 0-y)
 	b:SetWidth(w)
 	b:SetHeight(24)
