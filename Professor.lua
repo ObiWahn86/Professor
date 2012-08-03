@@ -13,11 +13,12 @@ function addon:OnInitialize()
 	addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
 	addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
 	addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
-	addon:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin");
+	addon:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin")
 	addon:OnArtifactUpdate()
 end
 
 Professor.races = nil
+Professor.UIFrame = nil
 Professor.detailedframe = {}
 Professor.canShow = false
 
@@ -107,15 +108,15 @@ end
 function Professor.Artifact:new(name, icon, spellId, itemId, rare, fragments)
 
     local o = {
-        name = name;
-        icon = icon;
-        spellId = spellId;
-        itemId = itemId;
-        rare = rare;
-        fragments = fragments;
+        name = name,
+        icon = icon,
+        spellId = spellId,
+        itemId = itemId,
+        rare = rare,
+        fragments = fragments,
 
-        firstComletionTime = nil;
-        solves = 0;
+        firstComletionTime = nil,
+        solves = 0,
 
 	getLink = function(self)
 
@@ -124,8 +125,8 @@ function Professor.Artifact:new(name, icon, spellId, itemId, rare, fragments)
 			link = GetSpellLink(self.spellId)
 		end
 
-		return "|T"..self.icon..":0|t "..link;
-	end;
+		return "|T"..self.icon..":0|t "..link
+	end
     }
 
     setmetatable(o, self)
@@ -148,9 +149,9 @@ function addon:LoadRaces()
             local currencyName, _, currencyTexture = GetCurrencyInfo(currencyId)
 
             local currency = {
-                id = currencyId;
-                name = currencyName;
-                icon = currencyTexture;
+                id = currencyId,
+                name = currencyName,
+                icon = currencyTexture,
             }
             local aRace = Professor.Race:new(raceIndex, raceName, raceTexture, currency)
 
@@ -343,7 +344,7 @@ Professor.artifactDB = {
       { 63111, 88909, 0,  28 },  -- Wooden Whistle
       { 64486, 91224, 0,  45 },  -- Word of Empress Zoe
       { 63110, 86865, 0,  30 },  -- Worn Hunting Knife
-    };
+    },
      [385] = {
       { 64377, 90608, 1, 150 },  -- Zin'rokh, Destroyer of Worlds
       { 69824, 98588, 1, 100 },  -- Voodoo Figurine
@@ -363,7 +364,7 @@ Professor.artifactDB = {
       { 64345, 90420, 0,  35 },  -- Skull-Shaped Planter
       { 64374, 90558, 0,  35 },  -- Tooth with Gold Filling
       { 63115, 88262, 0,  27 },  -- Zandalari Voodoo Doll
-    };
+    },
      [393] = {
       { 69764, 98533, 1, 150 },  -- Extinct Turtle Shell
       { 60955, 89693, 1,  85 },  -- Fossilized Hatchling
@@ -383,7 +384,7 @@ Professor.artifactDB = {
       { 66057, 93443, 0,  35 },  -- Strange Velvet Worm
       { 63527, 89895, 0,  35 },  -- Twisted Ammonite Shell
       { 64387, 90618, 0,  35 },  -- Vicious Ancient Fish
-    };
+    },
      [394] = {
       { 64646, 91761, 1, 150 },  -- Bones of Transformation
       { 64361, 90493, 1, 100 },  -- Druid and Priest Statue Set
@@ -411,7 +412,7 @@ Professor.artifactDB = {
       { 64648, 91766, 0,  45 },  -- Silver Scroll Case
       { 64378, 90609, 0,  35 },  -- String of Small Pink Pearls
       { 64650, 91769, 0,  45 },  -- Umbra Crescent
-    };
+    },
      [397] = {
       { 64644, 90843, 1, 130 },  -- Headdress of the First Shaman
 
@@ -424,7 +425,7 @@ Professor.artifactDB = {
       { 64438, 90833, 0,  45 },  -- Skull Drinking Cup
       { 64437, 90832, 0,  45 },  -- Tile of Glazed Clay
       { 64389, 90622, 0,  45 },  -- Tiny Bronze Scorpion
-    };
+    },
      [398] = {
       { 64456, 90983, 1, 124 },  -- Arrival of the Naaru
       { 64457, 90984, 1, 130 },  -- The Last Relic of Argus
@@ -437,7 +438,7 @@ Professor.artifactDB = {
       { 64458, 90987, 0,  45 },  -- Plated Elekk Goad
       { 64444, 90864, 0,  46 },  -- Scepter of the Nathrezim
       { 64443, 90861, 0,  46 },  -- Strange Silver Paperweight
-    };
+    },
      [399] = {
       { 64460, 90997, 1, 130 },  -- Nifflevar Bearded Axe
       { 69775, 98569, 1, 100 },  -- Vrykul Drinking Horn
@@ -447,7 +448,7 @@ Professor.artifactDB = {
       { 64459, 90988, 0,  45 },  -- Intricate Treasure Chest Key
       { 64461, 91008, 0,  45 },  -- Scramseax
       { 64467, 91084, 0,  45 },  -- Thorned Necklace
-    };
+    },
      [400] = {
       { 64481, 91214, 1, 140 },  -- Blessing of the Old God
       { 64482, 91215, 1, 140 },  -- Puzzle Box of Yogg-Saron
@@ -459,7 +460,7 @@ Professor.artifactDB = {
       { 64478, 91197, 0,  45 },  -- Six-Clawed Cornice
       { 64474, 91133, 0,  45 },  -- Spidery Sundial
       { 64480, 91211, 0,  45 },  -- Vizier's Scrawled Streamer
-    };
+    },
      [401] = {
       { 60847, 92137, 1, 150 },  -- Crawling Claw
       { 64881, 92145, 1, 150 },  -- Pendant of the Scarab Storm
@@ -475,7 +476,7 @@ Professor.artifactDB = {
       { 64658, 91792, 0,  45 },  -- Sketch of a Desert Palace
       { 64654, 91780, 0,  45 },  -- Soapstone Scarab Necklace
       { 64655, 91782, 0,  45 },  -- Tiny Oasis Mosaic
-    };
+    },
 }
 
 Professor.defaults = {
@@ -690,7 +691,7 @@ function addon:ShowTooltip(raceId, mode)
 
 		GameTooltip:AddLine(race.name, 1, 1, 0) -- yellow
 		GameTooltip:AddLine(race.completedCommon.."/"..race.totalCommon.." Commons", 1, 1, 1)
-		GameTooltip:AddLine(race.completedRare.."/"..race.totalRare.." Rares", 0.375, 0.75, 1);
+		GameTooltip:AddLine(race.completedRare.."/"..race.totalRare.." Rares", 0.375, 0.75, 1)
 	end
 
 	if (mode == 1) then
@@ -819,6 +820,7 @@ function addon:ToggleLock()
 end
 
 function addon:OnArtifcatHistoryReady(event, ...)
+
 	if IsArtifactCompletionHistoryAvailable() then
 
 		self:UpdateHistory()
@@ -900,7 +902,7 @@ end
 
 function addon:OnPlayerLogin()
 
-	local name = GetSpellInfo(80451);
+	local name = GetSpellInfo(80451)
 	if (name) then
 		local count = GetSpellCount(name)
 		if (count) then
