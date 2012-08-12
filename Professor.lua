@@ -7,18 +7,21 @@ function addon:OnInitialize()
 	addon:RegisterChatCommand("prof", "SlashProcessorFunction")
 
 	addon:LoadOptions()
-
-	addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
-	addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
-	addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
-	addon:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin");
-	addon:OnArtifactUpdate()
+	if HasArchaeology() then
+		addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
+		addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
+		addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
+		addon:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin")
+		addon:OnArtifactUpdate()
+	end
 end
 
 function addon:OnEnable()
-	--local loaded, reason = _G.LoadAddOn("Blizzard_ArchaeologyUI")
-	addon:BuildFrame()
-	addon:CreateOptionsFrame()
+	if HasArchaeology() then
+		local loaded, reason = _G.LoadAddOn("Blizzard_ArchaeologyUI")
+		addon:BuildFrame()
+		addon:CreateOptionsFrame()
+	end
 end
 
 Professor.races = nil
