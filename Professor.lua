@@ -3,6 +3,12 @@ local _VERSION = GetAddOnMetadata('Professor', 'version')
 local addon	= LibStub("AceAddon-3.0"):NewAddon("Professor", "AceConsole-3.0", "AceEvent-3.0")
 _G.Professor = addon
 
+-- Returns true if the player has the archaeology secondary skill
+local function HasArchaeology()
+	local _, _, arch = _G.GetProfessions()
+	return arch
+end
+
 function addon:OnInitialize()
 	addon:RegisterChatCommand("prof", "SlashProcessorFunction")
 
@@ -37,12 +43,6 @@ Professor.COLOURS = {
 
 Professor.Race = {}
 Professor.Artifact = {}
-
--- Returns true if the player has the archaeology secondary skill
-local function HasArchaeology()
-	local _, _, arch = _G.GetProfessions()
-	return arch
-end
 
 function Professor.Race:new(id, name, icon, currency)
     local o = {
