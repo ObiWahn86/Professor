@@ -38,6 +38,12 @@ Professor.COLOURS = {
 Professor.Race = {}
 Professor.Artifact = {}
 
+-- Returns true if the player has the archaeology secondary skill
+local function HasArchaeology()
+	local _, _, arch = _G.GetProfessions()
+	return arch
+end
+
 function Professor.Race:new(id, name, icon, currency)
     local o = {
                 id = id,
