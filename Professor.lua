@@ -9,31 +9,35 @@ local function HasArchaeology()
 	return arch
 end
 
-function addon:OnInitialize()
+function addon:OnInitialize() -- ADDON_LOADED
 	addon:RegisterChatCommand("prof", "SlashProcessorFunction")
 
 	addon:LoadOptions()
-	if HasArchaeology() then
-		addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
-		addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
-		addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
-		addon:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin")
-		addon:OnArtifactUpdate()
-	end
+
 end
 
-function addon:OnEnable()
+function addon:OnEnable() -- PLAYER_LOGIN
 	if HasArchaeology() then
 		local loaded, reason = _G.LoadAddOn("Blizzard_ArchaeologyUI")
-		addon:BuildFrame()
-		addon:CreateOptionsFrame()
+		if loaded then
+			addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
+			addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
+			addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
+			addon:OnArtifactUpdate()
+			addon:BuildFrame()
+			addon:CreateOptionsFrame()
+			self:SetHide(Professor.options.hide)
+		else
+			self:SetHide(true)
+		end
+	else
+		self:SetHide(true)
 	end
 end
 
 Professor.races = nil
 Professor.UIFrame = nil
 Professor.detailedframe = {}
-Professor.canShow = false
 
 Professor.COLOURS = {
     text   = '|cffaaaaaa',
@@ -79,8 +83,7 @@ function Professor.Race:new(id, name, icon, currency)
                 end,
 
                 UpdateHistory = function(self)
-                    local artifactCount = GetNumArtifactsByRace(self.id)
-
+                    
                     local artifactIndex = 1
                     local done = false
 
@@ -151,14 +154,14 @@ function addon:LoadRaces()
     local raceCount = GetNumArchaeologyRaces()
     self.races = {}
 
-    currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 0, 676, 677}
+    currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 0, 676, 677} -- raceid:10 is not implemented in the game "other"
 
     for raceIndex = 1, raceCount do
         local raceName, raceTexture, _, _ = GetArchaeologyRaceInfo(raceIndex)
 
         local currencyId = currencies[raceIndex]
 
-        if currencyId then
+        if currencyId > 0 then
             local currencyName, _, currencyTexture = GetCurrencyInfo(currencyId)
 
             local currency = {
@@ -182,7 +185,7 @@ end
 
 function addon:UpdateHistory()
 
-    for raceIndex, race in ipairs(self.races) do
+    for raceIndex, race in pairs(self.races) do -- there's a 'hole' if we skip the unimplemented race 'OTHER' as we should
         race:UpdateHistory()
     end
 end
@@ -222,11 +225,11 @@ local function PrintSummary()
 
 	totalSolves = 0
 
-    for id, race in ipairs(addon.races) do
-        if race.totalCommon > 0 or addon.totalRare > 0 then
+    for id, race in pairs(addon.races) do
+        if race.totalCommon > 0 or race.totalRare > 0 then
 
 			-- Keep track of how many total we've solved
-			totalSolves = race.totalSolves + totalSolves
+			      totalSolves = race.totalSolves + totalSolves
 
             print( string.format("%s|r%s: %s%d%s/%s%d|r%s, %s%d%s/%s%d|r%s — %s%d|r%s total",
                 race:GetString(),
@@ -552,7 +555,7 @@ function addon:BuildFrame()
 
 	-- need races before we create icons
 	addon:LoadRaces()
-	--self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
+	-- self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 	RequestArtifactCompletionHistory()
 
 	local cfg = Professor.options
@@ -578,7 +581,7 @@ function addon:BuildFrame()
 
 	local y = cfg.framePadding
 
-	for raceIndex, race in ipairs(self.races) do
+	for raceIndex, race in pairs(self.races) do
 
 		race.iconBtn = p:CreateButton(cfg.framePadding, y, cfg.frameIconSize, cfg.frameIconSize, race.icon, raceIndex, 0)
 		race.iconBtn:SetFrameLevel(101)
@@ -816,11 +819,7 @@ function addon:SetHide(a)
 	if (a) then
 		Professor.UIFrame:Hide()
 	else
-		if (Professor.canShow) then
-			Professor.UIFrame:Show()
-		else
-			Professor.UIFrame:Hide()
-		end
+		Professor.UIFrame:Show()
 	end
 end
 
@@ -852,7 +851,7 @@ function addon:OnArtifcatHistoryReady(event, ...)
 
 		local cfg = Professor.options
 
-		for raceIndex, race in ipairs(self.races) do
+		for raceIndex, race in pairs(self.races) do
 
 			if (race.completedCommon  == 0) then
 				race.bar1fg:Hide()
@@ -923,16 +922,4 @@ function addon:CreateOptionButton(parent, id, x, y, w, value, onClick)
 
 	b:SetText(value)
 	b:EnableMouse()
-end
-
-function addon:OnPlayerLogin()
-
-	local name = GetSpellInfo(80451)
-	if (name) then
-		local count = GetSpellCount(name)
-		if (count) then
-			Professor.canShow = true
-		end
-	end
-	self:SetHide(Professor.options.hide)
 end
