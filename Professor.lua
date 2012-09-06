@@ -511,6 +511,16 @@ Professor.artifactDB = {
 	 [677] = {
 	  { 89614, 113993, 1, 180 },  -- Anatomical Dummy
 	  { 89611, 113992, 1, 180 },  -- Quilen Statuette
+
+{ 79909, 113983, 0,  50 },  -- Cracked Mogu Runestone
+{ 79914, 113988, 0,  50 },  -- Iron Amulet
+{ 79908, 113982, 0,  50 },  -- Manacles of Rebellion
+{ 79916, 113990, 0,  50 },  -- Mogu Coin
+{ 79911, 113985, 0,  50 },  -- Petrified Bone Whip
+{ 79910, 113984, 0,  50 },  -- Terracotta Arm
+{ 79912, 113986, 0,  50 },  -- Thunder King Insignia
+{ 79915, 113989, 0,  50 },  -- Warlord's Branding Iron
+{ 79917, 113991, 0,  50 },  -- Worn Monument Ledger
 	},
 	 [0] = {
 	},
