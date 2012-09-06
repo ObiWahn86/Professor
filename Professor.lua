@@ -493,11 +493,20 @@ Professor.artifactDB = {
       { 64654, 91780, 0,  45 },  -- Soapstone Scarab Necklace
       { 64655, 91782, 0,  45 },  -- Tiny Oasis Mosaic
     },
-	 [676] = {
+	 [676] = {					  -- Pandaren
 	  { 89685, 113981, 1, 180 },  -- Spear of Xuen
 	  { 89684, 113980, 1, 180 },  -- Umbrella of Chi-Ji
 
 	  { 79903, 113977, 0,  50 },  -- Apothecary Tins
+	  { 79901, 113975, 0,  50 },  --Carved Bronze Mirror
+	  { 79897, 113971, 0,  50 },  -- Panderan Game Board
+	  { 79913, 113987, 0,  50 },  -- Edicts of the Thunder King
+	  { 79900, 113974, 0,  50 },  -- Empty Keg of Brewfather Xin Wo Yin
+	  { 79902, 113976, 0,  50 },  -- Gold-Inlaid Porecelain Funerary Figurine
+	  { 79904, 113978, 0,  50 },  -- Pearl of Yu'lon
+	  { 79905, 113979, 0,  50 },  -- Standard  of Niuzao
+	  { 79898, 113972, 0,  50 },  -- Twin Stein Set of Brewfather Quan Tou Kuo
+	  { 79899, 113973, 0,  50 },  -- Walking Cane of Brewfather Ren Yun
 	},
 	 [677] = {
 	  { 89614, 113993, 1, 180 },  -- Anatomical Dummy
