@@ -28,8 +28,6 @@ function addon:OnEnable() -- PLAYER_LOGIN
 		else
 			self:SetHide(true)
 		end
-	else
-		self:SetHide(true)
 	end
 end
 
