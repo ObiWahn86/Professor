@@ -502,7 +502,6 @@ Professor.artifactDB = {
 		{ 79903, 113977, 0,  50 },  -- Apothecary Tins
 		{ 79901, 113975, 0,  50 },  --Carved Bronze Mirror
 		{ 79897, 113971, 0,  50 },  -- Panderan Game Board
-		{ 79913, 113987, 0,  50 },  -- Edicts of the Thunder King
 		{ 79900, 113974, 0,  50 },  -- Empty Keg of Brewfather Xin Wo Yin
 		{ 79902, 113976, 0,  50 },  -- Gold-Inlaid Porecelain Funerary Figurine
 		{ 79904, 113978, 0,  50 },  -- Pearl of Yu'lon
@@ -515,6 +514,7 @@ Professor.artifactDB = {
 		{ 89611, 113992, 1, 180 },  -- Quilen Statuette
 
 		{ 79909, 113983, 0,  50 },  -- Cracked Mogu Runestone
+		{ 79913, 113987, 0,  50 },  -- Edicts of the Thunder King
 		{ 79914, 113988, 0,  50 },  -- Iron Amulet
 		{ 79908, 113982, 0,  50 },  -- Manacles of Rebellion
 		{ 79916, 113990, 0,  50 },  -- Mogu Coin
