@@ -94,8 +94,10 @@ function Professor.Race:new(id, name, icon, currency)
 						if name then
 
 							if completionCount > 0 then
-								self.artifacts[icon].firstComletionTime = firstComletionTime
-								self.artifacts[icon].solves = completionCount
+								if self.artifacts[icon] then
+									self.artifacts[icon].firstComletionTime = firstComletionTime
+									self.artifacts[icon].solves = completionCount
+								end
 
 								if rarity == 0 then
 									self.completedCommon = self.completedCommon + 1
