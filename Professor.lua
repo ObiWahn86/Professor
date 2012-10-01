@@ -97,6 +97,10 @@ function Professor.Race:new(id, name, icon, currency)
 								if self.artifacts[icon] then
 									self.artifacts[icon].firstComletionTime = firstComletionTime
 									self.artifacts[icon].solves = completionCount
+								--@alpha@
+								else
+									 addon:Print("Artifact missing from database: "..icon)
+								--@end-alpha@
 								end
 
 								if rarity == 0 then
