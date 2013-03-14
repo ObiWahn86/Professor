@@ -156,7 +156,7 @@ function addon:LoadRaces()
 	local raceCount = GetNumArchaeologyRaces()
 	self.races = {}
 
-	currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 0, 676, 677} -- raceid:10 is not implemented in the game "other"
+	currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 754, 676, 677, 0} -- raceid:10 is not implemented in the game "other"
 
 	for raceIndex = 1, raceCount do
 		local raceName, raceTexture, _, _ = GetArchaeologyRaceInfo(raceIndex)
@@ -524,6 +524,19 @@ Professor.artifactDB = {
 		{ 79912, 113986, 0,  50 },  -- Thunder King Insignia
 		{ 79915, 113989, 0,  50 },  -- Warlord's Branding Iron
 		{ 79917, 113991, 0,  50 },  -- Worn Monument Ledger
+	},
+	[754] = {
+		{ 95391, 139786, 1, 180 },  -- Mantid Sky Reaver
+		{ 95392, 139787, 1, 180 },  -- Sonic Pulse Generator
+
+		{ 95375, 139776, 0,  50 },  -- Banner of the Mantid Empire
+		{ 95376, 139779, 0,  50 },  -- Ancient Sap Feeder
+		{ 95377, 139780, 0,  50 },  -- The Praying Mantid
+		{ 95378, 139781, 0,  50 },  -- Inert Sound Beacon
+		{ 95379, 139782, 0,  50 },  -- Remains of a Paragon
+		{ 95380, 139783, 0,  50 },  -- Mantid Lamp
+		{ 95381, 139784, 0,  50 },  -- Pollen Collector
+		{ 95382, 139785, 0,  50 },  -- Kypari Sap Container
 	},
 	[0] = {
 	},
