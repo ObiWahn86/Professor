@@ -555,7 +555,7 @@ Professor.artifactDB = {
 	},
 	[821] = {
 		{ 117380, 172466, 1, 175 }, -- Ancient Frostwolf Fang
-		{ 116985, 172459, 1, 180 }, -- Headdress of the First Shaman
+		{ 116985, 172459, 0, 180 }, -- Headdress of the First Shaman
 
 		{ 114171, 168305, 0, 55 },  -- Ancestral Talisman
 		{ 114163, 168301, 0, 45 },  -- Barbed Fishing Hook
