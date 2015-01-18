@@ -985,12 +985,17 @@ function addon:OnArtifcatHistoryReady(event, ...)
 			else
 				frameWidth = cfg.frameMeterSize
 			end
-			race.bar3fg:Show()
-			race.bar3fg:SetWidth(frameWidth)
-			if (race.completedPristine == race.totalPristine) then
-				race.bar3fg:SetStatusBarColor(0, 1, 0)
+			if frameWidth == 0 then
+				race.bar3fg:Hide()
 			else
-				race.bar3fg:SetStatusBarColor(0, 0, 0.8)
+				race.bar3fg:Show()
+				race.bar3fg:SetWidth(frameWidth)
+
+				if (race.completedPristine == race.totalPristine) then
+					race.bar3fg:SetStatusBarColor(0, 1, 0)
+				else
+					race.bar3fg:SetStatusBarColor(0, 0, 0.8)
+				end
 			end
 		end
 	end
