@@ -1,10 +1,10 @@
 ## Title: Professor
-## Author: Ackis, Anossov, iamcal
+## Author: Ackis, Anossov, iamcal, Noloony
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
 
-## Interface: 50200
-## X-Compatible-With: 50200
+## Interface: 60000
+## X-Compatible-With: 60000
 ## Version: @project-version@
 
 ## X-Revision: @project-abbreviated-hash@

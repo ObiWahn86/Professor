@@ -79,7 +79,7 @@ function Professor.Race:new(id, name, icon, currency)
 				end,
 
 				UpdateHistory = function(self)
-					
+
 					local artifactIndex = 1
 					local done = false
 
@@ -156,7 +156,7 @@ function addon:LoadRaces()
 	local raceCount = GetNumArchaeologyRaces()
 	self.races = {}
 
-	currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 754, 676, 677, 0} -- raceid:10 is not implemented in the game "other"
+	currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 754, 676, 677, 828, 821, 829, 0}
 
 	for raceIndex = 1, raceCount do
 		local raceName, raceTexture, _, _ = GetArchaeologyRaceInfo(raceIndex)
@@ -538,6 +538,60 @@ Professor.artifactDB = {
 		{ 95381, 139784, 0,  50 },  -- Pollen Collector
 		{ 95382, 139785, 0,  50 },  -- Kypari Sap Container
 	},
+	[828] = {
+		{ 117354, 172460, 1, 250 },	-- Ancient Nest Guardian
+		{ 117382, 168331, 1, 190 },	-- Beakbreaker of Terokk
+
+		{ 114204, 168328, 0, 70 },	-- Apexis Crystal
+		{ 114205, 168329, 0, 65 },	-- Apexis Hieroglyph
+		{ 114206, 168330, 0, 50 },	-- Apexis Scroll
+		{ 114198, 168322, 0, 55 },	-- Burial Urn
+		{ 114199, 168323, 0, 50 },	-- Decree Scrolls
+		{ 114197, 168321, 0, 45 },	-- Dreamcatcher
+		{ 114203, 168327, 0, 45 },	-- Outcast Dreamcatcher
+		{ 114200, 168324, 0, 45 },	-- Solar Orb
+		{ 114201, 168325, 0, 60 },	-- Sundial
+		{ 114202, 168326, 0, 50 },	-- Talonpriest Mask
+	},
+	[821] = {
+		{ 117380, 172466, 1, 175 },	-- Ancient Frostwolf Fang
+		{ 116985, 172459, 1, 180 },	-- Headdress of the First Shaman
+
+		{ 114171, 168305, 0, 55 },	-- Ancestral Talisman
+		{ 114163, 168301, 0, 45 },	-- Barbed Fishing Hook
+		{ 114157, 168298, 0, 50 },	-- Blackrock Razor
+		{ 114165, 168302, 0, 45 },	-- Calcified Eye In a Jar
+		{ 114167, 168303, 0, 40 },	-- Ceremonial Tattoo Needles
+		{ 114169, 168304, 0, 45 },	-- Cracked Ivory Idol
+		{ 114177, 168308, 0, 40 },	-- Doomsday Prophecy
+		{ 114155, 168297, 0, 65 },	-- Elemental Bellows
+		{ 114141, 168290, 0, 50 },	-- Fang-Scarred Frostwolf Axe
+		{ 114173, 168306, 0, 50 },	-- Flask of Blazegrease
+		{ 114143, 168291, 0, 60 },	-- Frostwolf Ancestry Scrimshaw
+		{ 114161, 168300, 0, 60 },	-- Hooked Dagger
+		{ 114153, 168296, 0, 50 },	-- Metalworker's Hammer
+		{ 114175, 168307, 0, 55 },	-- Gronn-Tooth Necklace
+		{ 114147, 168293, 0, 45 },	-- Warsinger's Drums
+		{ 114151, 168295, 0, 60 },	-- Warsong Ceremonial Pike
+		{ 114159, 168299, 0, 45 },	-- Weighted Chopping Axe
+		{ 114145, 168292, 0, 45 },	-- Wolfskin Snowshoes
+		{ 114149, 168294, 0, 55 },	-- Screaming Bullroarer
+	},
+	[829] = {
+		{ 117385, 168319, 1, 150 },	-- Sorcerer-King Toe Ring
+		{ 117384, 168320, 1, 200 },	-- Warmaul of the Warmaul Chieftain
+
+		{ 114191, 168315, 0, 70 },	-- Eye of Har'gunn the Blind
+		{ 114189, 168313, 0, 50 },	-- Gladiator's Shield
+		{ 114190, 168314, 0, 55 },	-- Mortar and Pestle
+		{ 114185, 168311, 0, 45 },	-- Ogre Figurine
+		{ 114187, 168312, 0, 55 },	-- Pictogram Carving
+		{ 114194, 168318, 0, 45 },	-- Imperial Decree Stele
+		{ 114193, 168317, 0, 55 },	-- Rylak Riding Harness
+		{ 114192, 168316, 0, 50 },	-- Stone Dentures
+		{ 114183, 168310, 0, 55 },	-- Stone Manacles
+		{ 114181, 168309, 0, 40 },	-- Stonemaul Succession Stone
+	},
 	[0] = {
 	},
 }
@@ -767,7 +821,7 @@ function addon:ShowTooltip(raceId, mode)
 		else
 			GameTooltip:AddLine("Found "..race.completedCommon.."/"..race.totalCommon.." ("..(race.totalCommon-race.completedCommon).." Missing)", 1, 0, 0)
 			GameTooltip:AddLine(" ")
-			
+
 			for icon, artifact in pairs(race.artifacts) do
 
 				if ((artifact.solves == 0) and (artifact.rare == false)) then
@@ -789,7 +843,7 @@ function addon:ShowTooltip(raceId, mode)
 		else
 			GameTooltip:AddLine("Found "..race.completedRare.."/"..race.totalRare.." ("..(race.totalRare-race.completedRare).." Missing)", 1, 0, 0)
 			GameTooltip:AddLine(" ")
-			
+
 			for icon, artifact in pairs(race.artifacts) do
 
 				if ((artifact.solves == 0) and (artifact.rare == true)) then
