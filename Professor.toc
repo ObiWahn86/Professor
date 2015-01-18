@@ -1,5 +1,5 @@
 ## Title: Professor
-## Author: Ackis, Anossov, iamcal, Noloony
+## Author: Ackis, Anossov, iamcal, Noloony, iceeagle
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
 
