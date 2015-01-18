@@ -875,7 +875,11 @@ function addon:ShowMenu()
 
 	table.insert(menuList, {
 		text = "Options",
-		func = function() InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.name) end,
+		func = function()
+			InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.About)
+			InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.About)
+			InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.name)
+		end,
 		isTitle = false,
 		checked = false,
 		disabled = false,
@@ -883,7 +887,10 @@ function addon:ShowMenu()
 
 	table.insert(menuList, {
 		text = "About",
-		func = function() InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.About) end,
+		func = function()
+			InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.name)
+			InterfaceOptionsFrame_OpenToCategory(addon.OptionsFrame.About)
+		end,
 		isTitle = false,
 		checked = false,
 		disabled = false,
@@ -1014,7 +1021,6 @@ function addon:CreateOptionButton(parent, id, x, y, w, value, onClick)
 	b:SetPoint("TOPLEFT", x, 0-y)
 	b:SetWidth(w)
 	b:SetHeight(24)
-	--b:SetNormalTexture(texture)
 
 	b.text = b:GetFontString()
 	b.text:SetPoint("LEFT", b, "LEFT", 7, 0)
@@ -1024,5 +1030,5 @@ function addon:CreateOptionButton(parent, id, x, y, w, value, onClick)
 	b:RegisterForClicks("AnyDown")
 
 	b:SetText(value)
-	b:EnableMouse()
+	b:EnableMouse(true)
 end
