@@ -95,13 +95,13 @@ function Professor.Race:new(id, name, icon, currency)
 			self.totalSolves = 0
 
 			repeat
-				local name, description, rarity, icon, spellDescription,  _, _, firstComletionTime, completionCount = GetArtifactInfoByRace(self.id, artifactIndex)
+				local name, description, rarity, icon, spellDescription,  _, _, firstCompletionTime, completionCount = GetArtifactInfoByRace(self.id, artifactIndex)
 
 				artifactIndex = artifactIndex + 1
 				if name then
 					if completionCount > 0 then
 						if self.artifacts[icon] then
-							self.artifacts[icon].firstComletionTime = firstComletionTime
+							self.artifacts[icon].firstCompletionTime = firstCompletionTime
 							self.artifacts[icon].solves = completionCount
 						--[===[@alpha@
 						else
@@ -144,7 +144,7 @@ function Professor.Artifact:new(name, icon, spellId, itemId, rare, fragments, qu
 		rare = rare,
 		fragments = fragments,
 
-		firstComletionTime = nil,
+		firstCompletionTime = nil,
 		solves = 0,
 
 		pristineId = questId,
