@@ -18,7 +18,7 @@ function addon:OnEnable() -- PLAYER_LOGIN
 	if HasArchaeology() then
 		local loaded, reason = _G.LoadAddOn("Blizzard_ArchaeologyUI")
 		if loaded then
-			addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifcatHistoryReady")
+			addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifactHistoryReady")
 			addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
 			addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
 			addon:OnArtifactUpdate()
@@ -947,7 +947,7 @@ function addon:ToggleLock()
 	end
 end
 
-function addon:OnArtifcatHistoryReady(event, ...)
+function addon:OnArtifactHistoryReady(event, ...)
 	if IsArtifactCompletionHistoryAvailable() then
 		self:UpdateHistory()
 
