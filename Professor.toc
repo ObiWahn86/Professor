@@ -3,8 +3,7 @@
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
 
-## Interface: 60100
-## X-Compatible-With: 60100
+## Interface: 70000
 ## Version: @project-version@
 
 ## X-Revision: @project-abbreviated-hash@

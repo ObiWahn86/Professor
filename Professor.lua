@@ -18,10 +18,9 @@ function addon:OnEnable() -- PLAYER_LOGIN
 	if HasArchaeology() then
 		local loaded, reason = _G.LoadAddOn("Blizzard_ArchaeologyUI")
 		if loaded then
-			addon:RegisterEvent("ARTIFACT_HISTORY_READY", "OnArtifactHistoryReady")
-			addon:RegisterEvent("ARTIFACT_UPDATE", "OnArtifactUpdate")
+			addon:RegisterEvent("RESEARCH_ARTIFACT_HISTORY_READY", "OnArtifactHistoryReady")
+			addon:RegisterEvent("RESEARCH_ARTIFACT_UPDATE", "OnArtifactUpdate")
 			addon:RegisterEvent("PLAYER_LOGOUT", "SaveOptions")
-			addon:OnArtifactUpdate()
 			addon:BuildFrame()
 			addon:CreateOptionsFrame()
 			self:SetHide(Professor.options.hide)
@@ -46,12 +45,12 @@ Professor.COLOURS = {
 Professor.Race = {}
 Professor.Artifact = {}
 
-function Professor.Race:new(id, name, icon, currency)
+function Professor.Race:new(id, name, icon, raceItemID)
 	local o = {
 		id = id,
 		name = name,
 		icon = icon,
-		currency = currency,
+		raceItemID = raceItemID,
 
 		totalCommon = 0,
 		totalRare = 0,
@@ -99,13 +98,14 @@ function Professor.Race:new(id, name, icon, currency)
 
 				artifactIndex = artifactIndex + 1
 				if name then
+					icon = string.upper(icon)
 					if completionCount > 0 then
 						if self.artifacts[icon] then
 							self.artifacts[icon].firstCompletionTime = firstCompletionTime
 							self.artifacts[icon].solves = completionCount
 						--[===[@alpha@
 						else
-							 addon:Print("Artifact missing from database: "..icon)
+							addon:Print("Artifact missing from database: "..icon)
 						--@end-alpha@]===]
 						end
 
@@ -117,7 +117,7 @@ function Professor.Race:new(id, name, icon, currency)
 
 						self.totalSolves = self.totalSolves + completionCount
 					end
-					if self.artifacts[icon].pristineId then
+					if self.artifacts[icon] and self.artifacts[icon].pristineId then
 						self.artifacts[icon].pristineSolved = IsQuestFlaggedCompleted(self.artifacts[icon].pristineId);
 						if self.artifacts[icon].pristineSolved then
 							self.completedPristine = self.completedPristine + 1
@@ -169,31 +169,22 @@ function addon:LoadRaces()
 	local raceCount = GetNumArchaeologyRaces()
 	self.races = {}
 
-	currencies = {384, 398, 393, 394, 400, 397, 401, 385, 399, 754, 676, 677, 828, 821, 829}
-
 	for raceIndex = 1, raceCount do
-		local raceName, raceTexture, _, _ = GetArchaeologyRaceInfo(raceIndex)
+		local raceName, raceTexture, raceItemID = GetArchaeologyRaceInfo(raceIndex)
 
-		local currencyId = currencies[raceIndex]
+		local aRace = Professor.Race:new(raceIndex, raceName, raceTexture, raceItemID)
 
-		if currencyId > 0 then
-			local currencyName, _, currencyTexture = GetCurrencyInfo(currencyId)
+		if (Professor.artifactDB[aRace.raceItemID]) then
+			for i, artifact in ipairs( Professor.artifactDB[aRace.raceItemID] ) do
+				local itemId, spellId, rarity, fragments, questId, icon = unpack(artifact)
+				local name = GetSpellInfo(spellId)
 
-			local currency = {
-				id = currencyId,
-				name = currencyName,
-				icon = currencyTexture,
-			}
-			local aRace = Professor.Race:new(raceIndex, raceName, raceTexture, currency)
-
-			for i, artifact in ipairs( Professor.artifactDB[aRace.currency.id] ) do
-				local itemId, spellId, rarity, fragments, questId = unpack(artifact)
-				local name, _, icon = GetSpellInfo(spellId)
+				-- icon = string.gsub(string.upper(GetFileName(GetSpellTexture(spellId))), ".BLP", "")
 				aRace:AddArtifact(name, icon, spellId, itemId, (rarity == 1), fragments, questId)
 			end
-
-			self.races[raceIndex] = aRace
 		end
+
+		self.races[raceIndex] = aRace
 	end
 end
 
@@ -262,20 +253,6 @@ local function PrintSummary()
 	print("Total Solves: " .. totalSolves)
 end
 
-function addon:OnHistoryReady(event, ...)
-	if IsArtifactCompletionHistoryAvailable() then
-		if not self.races then
-			self:LoadRaces()
-		end
-
-		self:UpdateHistory()
-
-		self:action()
-
-		self:UnregisterEvent("ARTIFACT_HISTORY_READY")
-	end
-end
-
 -- Code snippet stolen from GearGuage by Torhal and butchered by Ackis
 local function StrSplit(input)
 	if not input then
@@ -307,13 +284,11 @@ function addon:SlashProcessorFunction(input)
 	if not arg1 or (arg1 and arg1:trim() == "") then
 		addon:Print("Acceptable commands are: detailed, show, hide, toggle, help")
 		self.action = PrintSummary
-		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 		RequestArtifactCompletionHistory()
 	-- First arg is detailed, second is the race number, print off detailed summary for that
 	elseif arg1 == "detailed" or arg1 == "Detailed" then
 		local raceId = tonumber(arg2)
 		self.action = function () PrintDetailed(raceId) end
-		self:RegisterEvent("ARTIFACT_HISTORY_READY", "OnHistoryReady")
 		RequestArtifactCompletionHistory()
 	elseif arg1 == "show" or arg1 == "Show" then
 		addon:SetHide(false)
@@ -333,270 +308,309 @@ function addon:SlashProcessorFunction(input)
 	end
 end
 
--- Exported from Wowhead. { [racialCurrencyId] = { { itemId, spellId, rarity, fragments, questId }, ... }, ... }
+-- { [raceKeystoneItemID] = { { itemId, spellId, rarity, fragments, questId, icon }, ... }, ... }
 Professor.artifactDB = {
-	[384] = {
-		{  64373,  90553, 1, 100,   nil },  -- Chalice of the Mountain Kings
-		{  64372,  90521, 1, 100,   nil },  -- Clockwork Gnome
-		{  64489,  91227, 1, 150,   nil },  -- Staff of Sorcerer-Thane Thaurissan
-		{  64488,  91226, 1, 150,   nil },  -- The Innkeeper's Daughter
+	-- Dwarf
+	[52843] = {
+		{  64373,  90553, 1, 100,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CHALICE OF MOUNTAINKINGS' },  -- Chalice of the Mountain Kings
+		{  64372,  90521, 1, 100,   nil, 'INTERFACE\\ICONS\\INV_MISC_HEAD_CLOCKWORKGNOME_01' },  -- Clockwork Gnome
+		{  64489,  91227, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_STAFFOFSORCERER_THAN THAURISSAN' },  -- Staff of Sorcerer-Thane Thaurissan
+		{  64488,  91226, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_THEINNKEEPERSDAUGHTER' },  -- The Innkeeper's Daughter
 
-		{  63113,  88910, 0,  34,   nil },  -- Belt Buckle with Anvilmar Crest
-		{  64339,  90411, 0,  35,   nil },  -- Bodacious Door Knocker
-		{  63112,  86866, 0,  32,   nil },  -- Bone Gaming Dice
-		{  64340,  90412, 0,  34,   nil },  -- Boot Heel with Scrollwork
-		{  63409,  86864, 0,  35,   nil },  -- Ceramic Funeral Urn
-		{  64362,  90504, 0,  35,   nil },  -- Dented Shield of Horuz Killcrow
-		{  66054,  93440, 0,  30,   nil },  -- Dwarven Baby Socks
-		{  64342,  90413, 0,  35,   nil },  -- Golden Chamber Pot
-		{  64344,  90419, 0,  36,   nil },  -- Ironstar's Petrified Shield
-		{  64368,  90518, 0,  35,   nil },  -- Mithril Chain of Angerforge
-		{  63414,  89717, 0,  34,   nil },  -- Moltenfist's Jeweled Goblet
-		{  64337,  90410, 0,  35,   nil },  -- Notched Sword of Tunadil the Redeemer
-		{  63408,  86857, 0,  35,   nil },  -- Pewter Drinking Cup
-		{  64659,  91793, 0,  45,   nil },  -- Pipe of Franclorn Forgewright
-		{  64487,  91225, 0,  45,   nil },  -- Scepter of Bronzebeard
-		{  64367,  90509, 0,  35,   nil },  -- Scepter of Charlga Razorflank
-		{  64366,  90506, 0,  35,   nil },  -- Scorched Staff of Shadow Priest Anund
-		{  64483,  91219, 0,  45,   nil },  -- Silver Kris of Korl
-		{  63411,  88181, 0,  34,   nil },  -- Silver Neck Torc
-		{  64371,  90519, 0,  35,   nil },  -- Skull Staff of Shadowforge
-		{  64485,  91223, 0,  45,   nil },  -- Spiked Gauntlets of Anvilrage
-		{  63410,  88180, 0,  35,   nil },  -- Stone Gryphon
-		{  64484,  91221, 0,  45,   nil },  -- Warmaul of Burningeye
-		{  64343,  90415, 0,  35,   nil },  -- Winged Helm of Corehammer
-		{  63111,  88909, 0,  28,   nil },  -- Wooden Whistle
-		{  64486,  91224, 0,  45,   nil },  -- Word of Empress Zoe
-		{  63110,  86865, 0,  30,   nil },  -- Worn Hunting Knife
+		{  63113,  88910, 0,  34,   nil, 'INTERFACE\\ICONS\\INV_BELT_40A' },  -- Belt Buckle with Anvilmar Crest
+		{  64339,  90411, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SILVERDOORKNOCKER OF FEMALE DWARF' },  -- Bodacious Door Knocker
+		{  63112,  86866, 0,  32,   nil, 'INTERFACE\\ICONS\\INV_MISC_DICE_02' },  -- Bone Gaming Dice
+		{  64340,  90412, 0,  34,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_DECORATED LEATHER BOOT HEEL' },  -- Boot Heel with Scrollwork
+		{  63409,  86864, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_MISC_URN_01' },  -- Ceramic Funeral Urn
+		{  64362,  90504, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_DENTEDSHIELD' },  -- Dented Shield of Horuz Killcrow
+		{  66054,  93440, 0,  30,   nil, 'INTERFACE\\ICONS\\INV_BOOTS_CLOTH_14' },  -- Dwarven Baby Socks
+		{  64342,  90413, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_GOLDCHAMBERPOT' },  -- Golden Chamber Pot
+		{  64344,  90419, 0,  36,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_STONESHIELD' },  -- Ironstar's Petrified Shield
+		{  64368,  90518, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_MITHRILNECKLACE' },  -- Mithril Chain of Angerforge
+		{  63414,  89717, 0,  34,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_GEMMEDDRINKINGCUP' },  -- Moltenfist's Jeweled Goblet
+		{  64337,  90410, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_NOTCHEDSWORD' },  -- Notched Sword of Tunadil the Redeemer
+		{  63408,  86857, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_MISC_BEER_01' },  -- Pewter Drinking Cup
+		{  64659,  91793, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_PIPE_01' },  -- Pipe of Franclorn Forgewright
+		{  64487,  91225, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_JEWELEDDWARFSCEPTER' },  -- Scepter of Bronzebeard
+		{  64367,  90509, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SPINEDQUILLBOARSCEPTER' },  -- Scepter of Charlga Razorflank
+		{  64366,  90506, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_BLACKENEDSTAFF' },  -- Scorched Staff of Shadow Priest Anund
+		{  64483,  91219, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SILVERDAGGER' },  -- Silver Kris of Korl
+		{  63411,  88181, 0,  34,   nil, 'INTERFACE\\ICONS\\INV_JEWELRY_NECKLACE_07' },  -- Silver Neck Torc
+		{  64371,  90519, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SKULLSTAFF' },  -- Skull Staff of Shadowforge
+		{  64485,  91223, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_QIRAJ_HILTSPIKED' },  -- Spiked Gauntlets of Anvilrage
+		{  63410,  88180, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CARVED WILDHAMMER GRYPHON FIGURINE' },  -- Stone Gryphon
+		{  64484,  91221, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MACE_81' },  -- Warmaul of Burningeye
+		{  64343,  90415, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_WINGEDHELM' },  -- Winged Helm of Corehammer
+		{  63111,  88909, 0,  28,   nil, 'INTERFACE\\ICONS\\ABILITY_HUNTER_BEASTCALL' },  -- Wooden Whistle
+		{  64486,  91224, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_PEARLRING2' },  -- Word of Empress Zoe
+		{  63110,  86865, 0,  30,   nil, 'INTERFACE\\ICONS\\INV_SWORD_110' },  -- Worn Hunting Knife
 	},
-	[385] = {
-		{  64377,  90608, 1, 150,   nil },  -- Zin'rokh, Destroyer of Worlds
-		{  69824,  98588, 1, 100,   nil },  -- Voodoo Figurine
-		{  69777,  98556, 1, 100,   nil },  -- Haunted War Drum
+	-- Troll
+	[63128] = {
+		{  64377,  90608, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_ZINROKH SWORD' },  -- Zin'rokh, Destroyer of Worlds
+		{  69824,  98588, 1, 100,   nil, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_TROLLGOLEM' },  -- Voodoo Figurine
+		{  69777,  98556, 1, 100,   nil, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_TROLLDRUM' },  -- Haunted War Drum
 
-		{  64348,  90429, 0,  35,   nil },  -- Atal'ai Scepter
-		{  64346,  90421, 0,  35,   nil },  -- Bracelet of Jade and Coins
-		{  63524,  89891, 0,  35,   nil },  -- Cinnabar Bijou
-		{  64375,  90581, 0,  35,   nil },  -- Drakkari Sacrificial Knife
-		{  63523,  89890, 0,  35,   nil },  -- Eerie Smolderthorn Idol
-		{  63413,  89711, 0,  34,   nil },  -- Feathered Gold Earring
-		{  63120,  88907, 0,  30,   nil },  -- Fetish of Hir'eek
-		{  66058,  93444, 0,  32,   nil },  -- Fine Bloodscalp Dinnerware
-		{  64347,  90423, 0,  35,   nil },  -- Gahz'rilla Figurine
-		{  63412,  89701, 0,  35,   nil },  -- Jade Asp with Ruby Eyes
-		{  63118,  88908, 0,  32,   nil },  -- Lizard Foot Charm
-		{  64345,  90420, 0,  35,   nil },  -- Skull-Shaped Planter
-		{  64374,  90558, 0,  35,   nil },  -- Tooth with Gold Filling
-		{  63115,  88262, 0,  27,   nil },  -- Zandalari Voodoo Doll
+		{  64348,  90429, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TROLLBATSCEPTER' },  -- Atal'ai Scepter
+		{  64346,  90421, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_MISC_SILVERJADENECKLACE' },  -- Bracelet of Jade and Coins
+		{  63524,  89891, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_BIJOU_RED' },  -- Cinnabar Bijou
+		{  64375,  90581, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_SWORD_95' },  -- Drakkari Sacrificial Knife
+		{  63523,  89890, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_ZULGURUBTRINKET' },  -- Eerie Smolderthorn Idol
+		{  63413,  89711, 0,  34,   nil, 'INTERFACE\\ICONS\\INV_JEWELRY_NECKLACE_AHNQIRAJ_02' },  -- Feathered Gold Earring
+		{  63120,  88907, 0,  30,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TROLLBATIDOL' },  -- Fetish of Hir'eek
+		{  66058,  93444, 0,  32,   nil, 'INTERFACE\\ICONS\\INV_SWORD_36' },  -- Fine Bloodscalp Dinnerware
+		{  64347,  90423, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_WHITEHYDRAFIGURINE' },  -- Gahz'rilla Figurine
+		{  63412,  89701, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_JEWELCRAFTING_JADESERPENT' },  -- Jade Asp with Ruby Eyes
+		{  63118,  88908, 0,  32,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TROLLLIZARDFOOTCHARM' },  -- Lizard Foot Charm
+		{  64345,  90420, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_OFFHAND_ZULAMAN_D_01' },  -- Skull-Shaped Planter
+		{  64374,  90558, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TROLLTOOTH W GOLDFILLING' },  -- Tooth with Gold Filling
+		{  63115,  88262, 0,  27,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TROLL_VOODOODOLL' },  -- Zandalari Voodoo Doll
 	},
-	[393] = {
-		{  69764,  98533, 1, 150,   nil },  -- Extinct Turtle Shell
-		{  60955,  89693, 1,  85,   nil },  -- Fossilized Hatchling
-		{  60954,  90619, 1, 100,   nil },  -- Fossilized Raptor
-		{  69821,  98582, 1, 120,   nil },  -- Pterrodax Hatchling
-		{  69776,  98560, 1, 100,   nil },  -- Ancient Amber
+	-- Fossil
+	[0] = {
+		{  69764,  98533, 1, 150,   nil, 'INTERFACE\\ICONS\\INV_SHIELD_18' },  -- Extinct Turtle Shell
+		{  60955,  89693, 1,  85,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TINYDINOSAURSKELETON' },  -- Fossilized Hatchling
+		{  60954,  90619, 1, 100,   nil, 'INTERFACE\\ICONS\\ABILITY_MOUNT_FOSSILIZEDRAPTOR' },  -- Fossilized Raptor
+		{  69821,  98582, 1, 120,   nil, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_BABYPTERRODAX' },  -- Pterrodax Hatchling
+		{  69776,  98560, 1, 100,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_INSECT IN AMBER' },  -- Ancient Amber
 
-		{  64355,  90452, 0,  35,   nil },  -- Ancient Shark Jaws
-		{  63121,  88930, 0,  25,   nil },  -- Beautiful Preserved Fern
-		{  63109,  88929, 0,  31,   nil },  -- Black Trilobite
-		{  64349,  90432, 0,  35,   nil },  -- Devilsaur Tooth
-		{  64385,  90617, 0,  33,   nil },  -- Feathered Raptor Arm
-		{  64473,  91132, 0,  45,   nil },  -- Imprint of a Kraken Tentacle
-		{  64350,  90433, 0,  35,   nil },  -- Insect in Amber
-		{  64468,  91089, 0,  45,   nil },  -- Proto-Drake Skeleton
-		{  66056,  93442, 0,  30,   nil },  -- Shard of Petrified Wood
-		{  66057,  93443, 0,  35,   nil },  -- Strange Velvet Worm
-		{  63527,  89895, 0,  35,   nil },  -- Twisted Ammonite Shell
-		{  64387,  90618, 0,  35,   nil },  -- Vicious Ancient Fish
+		{  64355,  90452, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SHARK JAWS' },  -- Ancient Shark Jaws
+		{  63121,  88930, 0,  25,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_FOSSIL_FERN' },  -- Beautiful Preserved Fern
+		{  63109,  88929, 0,  31,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_BLACKTRILOBITE' },  -- Black Trilobite
+		{  64349,  90432, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_MISC_MONSTERHORN_08' },  -- Devilsaur Tooth
+		{  64385,  90617, 0,  33,   nil, 'INTERFACE\\ICONS\\INV_FEATHER_15' },  -- Feathered Raptor Arm
+		{  64473,  91132, 0,  45,   nil, 'INTERFACE\\ICONS\\ACHIEVEMENT_BOSS_YOGGSARON_01' },  -- Imprint of a Kraken Tentacle
+		{  64350,  90433, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_INSECT IN AMBER' },  -- Insect in Amber
+		{  64468,  91089, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_FOSSIL_DINOSAURBONE' },  -- Proto-Drake Skeleton
+		{  66056,  93442, 0,  30,   nil, 'INTERFACE\\ICONS\\INV_MISC_FOOD_155_FISH_78' },  -- Shard of Petrified Wood
+		{  66057,  93443, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_INSCRIPTION_PIGMENT_BUG07' },  -- Strange Velvet Worm
+		{  63527,  89895, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_FOSSIL_SNAILSHELL' },  -- Twisted Ammonite Shell
+		{  64387,  90618, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_MISC_FISH_83' },  -- Vicious Ancient Fish
 	},
-	[394] = {
-		{  64646,  91761, 1, 150,   nil },  -- Bones of Transformation
-		{  64361,  90493, 1, 100,   nil },  -- Druid and Priest Statue Set
-		{  64358,  90464, 1, 100,   nil },  -- Highborne Soul Mirror
-		{  64383,  90614, 1,  98,   nil },  -- Kaldorei Wind Chimes
-		{  64643,  90616, 1, 100,   nil },  -- Queen Azshara's Dressing Gown
-		{  64645,  91757, 1, 150,   nil },  -- Tyrande's Favorite Doll
-		{  64651,  91773, 1, 150,   nil },  -- Wisp Amulet
+	-- Night Elf
+	[63127] = {
+		{  64646,  91761, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_BONES OF TRANSFORMATION' },  -- Bones of Transformation
+		{  64361,  90493, 1, 100,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_DRUIDPRIESTSTATUESET' },  -- Druid and Priest Statue Set
+		{  64358,  90464, 1, 100,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_HIGHBORNESOULMIRROR' },  -- Highborne Soul Mirror
+		{  64383,  90614, 1,  98,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_KALDOREIWINDCHIMES' },  -- Kaldorei Wind Chimes
+		{  64643,  90616, 1, 100,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_QUEENAZSHARA DRESSINGGOWN' },  -- Queen Azshara's Dressing Gown
+		{  64645,  91757, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TYRANDESFAVORITEDOLL' },  -- Tyrande's Favorite Doll
+		{  64651,  91773, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_WISPAMULET' },  -- Wisp Amulet
 
-		{  64647,  91762, 0,  45,   nil },  -- Carcanet of the Hundred Magi
-		{  64379,  90610, 0,  34,   nil },  -- Chest of Tiny Glass Animals
-		{  63407,  89696, 0,  35,   nil },  -- Cloak Clasp with Antlers
-		{  63525,  89893, 0,  35,   nil },  -- Coin from Eldre'Thalas
-		{  64381,  90611, 0,  35,   nil },  -- Cracked Crystal Vial
-		{  64357,  90458, 0,  35,   nil },  -- Delicate Music Box
-		{  63528,  89896, 0,  35,   nil },  -- Green Dragon Ring
-		{  64356,  90453, 0,  35,   nil },  -- Hairpin of Silver and Malachite
-		{  63129,  89009, 0,  30,   nil },  -- Highborne Pyxis
-		{  63130,  89012, 0,  30,   nil },  -- Inlaid Ivory Comb
-		{  64354,  90451, 0,  35,   nil },  -- Kaldorei Amphora
-		{  66055,  93441, 0,  30,   nil },  -- Necklace with Elune Pendant
-		{  63131,  89014, 0,  30,   nil },  -- Scandalous Silk Nightgown
-		{  64382,  90612, 0,  35,   nil },  -- Scepter of Xavius
-		{  63526,  89894, 0,  35,   nil },  -- Shattered Glaive
-		{  64648,  91766, 0,  45,   nil },  -- Silver Scroll Case
-		{  64378,  90609, 0,  35,   nil },  -- String of Small Pink Pearls
-		{  64650,  91769, 0,  45,   nil },  -- Umbra Crescent
+		{  64647,  91762, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_FORESTNECKLACE' },  -- Carcanet of the Hundred Magi
+		{  64379,  90610, 0,  34,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CHESTOFTINYGLASSANIMALS' },  -- Chest of Tiny Glass Animals
+		{  63407,  89696, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_ANTLEREDCLOAKCLASP' },  -- Cloak Clasp with Antlers
+		{  63525,  89893, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_MISC_ELVENCOINS' },  -- Coin from Eldre'Thalas
+		{  64381,  90611, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CRACKEDCRYSTALVIAL' },  -- Cracked Crystal Vial
+		{  64357,  90458, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_DELICATEMUSICBOX' },  -- Delicate Music Box
+		{  63528,  89896, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_JEWELRY_RING_41' },  -- Green Dragon Ring
+		{  64356,  90453, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_HAIRPINSILVERMALACHITE' },  -- Hairpin of Silver and Malachite
+		{  63129,  89009, 0,  30,   nil, 'INTERFACE\\ICONS\\INV_INSCRIPTION_INKPURPLE02' },  -- Highborne Pyxis
+		{  63130,  89012, 0,  30,   nil, 'INTERFACE\\ICONS\\INV_MISC_COMB_01' },  -- Inlaid Ivory Comb
+		{  64354,  90451, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_ALCHEMY_IMBUEDVIAL' },  -- Kaldorei Amphora
+		{  66055,  93441, 0,  30,   nil, 'INTERFACE\\ICONS\\INV_JEWELRY_NECKLACE_11' },  -- Necklace with Elune Pendant
+		{  63131,  89014, 0,  30,   nil, 'INTERFACE\\ICONS\\INV_FABRIC_MAGEWEAVE_01' },  -- Scandalous Silk Nightgown
+		{  64382,  90612, 0,  35,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_BLOODYSATYRSCEPTER' },  -- Scepter of Xavius
+		{  63526,  89894, 0,  35,   nil, 'INTERFACE\\ICONS\\ABILITY_UPGRADEMOONGLAIVE' },  -- Shattered Glaive
+		{  64648,  91766, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SILVERSCROLLCASE' },  -- Silver Scroll Case
+		{  64378,  90609, 0,  35,   nil, 'INTERFACE\\ICONS\\INV_JEWELRY_NECKLACE_10' },  -- String of Small Pink Pearls
+		{  64650,  91769, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_THROWINGCHAKRUM_01' },  -- Umbra Crescent
 	},
-	[397] = {
-		{  64644,  90843, 1, 130,   nil },  -- Headdress of the First Shaman
+	-- Orc
+	[64392] = {
+		{  64644,  90843, 1, 130,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_ANCIENTORCSHAMANHEADDRESS' },  -- Headdress of the First Shaman
 
-		{  64436,  90831, 0,  45,   nil },  -- Fiendish Whip
-		{  64421,  90734, 0,  45,   nil },  -- Fierce Wolf Figurine
-		{  64418,  90728, 0,  45,   nil },  -- Gray Candle Stub
-		{  64417,  90720, 0,  45,   nil },  -- Maul of Stone Guard Mur'og
-		{  64419,  90730, 0,  45,   nil },  -- Rusted Steak Knife
-		{  64420,  90732, 0,  45,   nil },  -- Scepter of Nekros Skullcrusher
-		{  64438,  90833, 0,  45,   nil },  -- Skull Drinking Cup
-		{  64437,  90832, 0,  45,   nil },  -- Tile of Glazed Clay
-		{  64389,  90622, 0,  45,   nil },  -- Tiny Bronze Scorpion
+		{  64436,  90831, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_CROP_01' },  -- Fiendish Whip
+		{  64421,  90734, 0,  45,   nil, 'INTERFACE\\ICONS\\ABILITY_MOUNT_WHITEDIREWOLF' },  -- Fierce Wolf Figurine
+		{  64418,  90728, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CANDLESTUB' },  -- Gray Candle Stub
+		{  64417,  90720, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_OGRE2HANDEDHAMMER' },  -- Maul of Stone Guard Mur'og
+		{  64419,  90730, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_RUSTEDSTEAKKNIFE' },  -- Rusted Steak Knife
+		{  64420,  90732, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_BLADEDORCSCEPTER' },  -- Scepter of Nekros Skullcrusher
+		{  64438,  90833, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SKULLMUG' },  -- Skull Drinking Cup
+		{  64437,  90832, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_STONETABLET_03' },  -- Tile of Glazed Clay
+		{  64389,  90622, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TINYBRONZESCORPION' },  -- Tiny Bronze Scorpion
 	},
-	[398] = {
-		{  64456,  90983, 1, 124,   nil },  -- Arrival of the Naaru
-		{  64457,  90984, 1, 130,   nil },  -- The Last Relic of Argus
+	-- Draenei
+	[64394] = {
+		{  64456,  90983, 1, 124,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_NAARUCRYSTAL' },  -- Arrival of the Naaru
+		{  64457,  90984, 1, 130,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_DRAENEIRELIC' },  -- The Last Relic of Argus
 
-		{  64440,  90853, 0,  45,   nil },  -- Anklet with Golden Bells
-		{  64453,  90968, 0,  46,   nil },  -- Baroque Sword Scabbard
-		{  64442,  90860, 0,  45,   nil },  -- Carved Harp of Exotic Wood
-		{  64455,  90975, 0,  45,   nil },  -- Dignified Portrait
-		{  64454,  90974, 0,  44,   nil },  -- Fine Crystal Candelabra
-		{  64458,  90987, 0,  45,   nil },  -- Plated Elekk Goad
-		{  64444,  90864, 0,  46,   nil },  -- Scepter of the Nathrezim
-		{  64443,  90861, 0,  46,   nil },  -- Strange Silver Paperweight
+		{  64440,  90853, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_VINERING' },  -- Anklet with Golden Bells
+		{  64453,  90968, 0,  46,   nil, 'INTERFACE\\ICONS\\INV_MISC_QUIVER_05' },  -- Baroque Sword Scabbard
+		{  64442,  90860, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CARVED HARP OF EXOTIC WOOD' },  -- Carved Harp of Exotic Wood
+		{  64455,  90975, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_DIGNIFIED DRAENEI PORTRAIT' },  -- Dignified Portrait
+		{  64454,  90974, 0,  44,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_DRAENEI CANDELABRA' },  -- Fine Crystal Candelabra
+		{  64458,  90987, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_SPEAR_01' },  -- Plated Elekk Goad
+		{  64444,  90864, 0,  46,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_BURNINGDEMONSCEPTER' },  -- Scepter of the Nathrezim
+		{  64443,  90861, 0,  46,   nil, 'INTERFACE\\ICONS\\INV_STONE_16' },  -- Strange Silver Paperweight
 	},
-	[399] = {
-		{  64460,  90997, 1, 130,   nil },  -- Nifflevar Bearded Axe
-		{  69775,  98569, 1, 100,   nil },  -- Vrykul Drinking Horn
+	-- Vrykul
+	[64395] = {
+		{  64460,  90997, 1, 130,   nil, 'INTERFACE\\ICONS\\INV_AXE_97' },  -- Nifflevar Bearded Axe
+		{  69775,  98569, 1, 100,   nil, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_VRYKULDRINKINGHORN' },  -- Vrykul Drinking Horn
 
-		{  64464,  91014, 0,  45,   nil },  -- Fanged Cloak Pin
-		{  64462,  91012, 0,  45,   nil },  -- Flint Striker
-		{  64459,  90988, 0,  45,   nil },  -- Intricate Treasure Chest Key
-		{  64461,  91008, 0,  45,   nil },  -- Scramseax
-		{  64467,  91084, 0,  45,   nil },  -- Thorned Necklace
+		{  64464,  91014, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_JEWELRY_TRINKET_01' },  -- Fanged Cloak Pin
+		{  64462,  91012, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_STONE_GRINDINGSTONE_02' },  -- Flint Striker
+		{  64459,  90988, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_KEY_07' },  -- Intricate Treasure Chest Key
+		{  64461,  91008, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_SWORD_118' },  -- Scramseax
+		{  64467,  91084, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_THORNNECKLACE' },  -- Thorned Necklace
 	},
-	[400] = {
-		{  64481,  91214, 1, 140,   nil },  -- Blessing of the Old God
-		{  64482,  91215, 1, 140,   nil },  -- Puzzle Box of Yogg-Saron
+	-- Nerubian
+	[64396] = {
+		{  64481,  91214, 1, 140,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_OLDGODTRINKET' },  -- Blessing of the Old God
+		{  64482,  91215, 1, 140,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CTHUNSPUZZLEBOX' },  -- Puzzle Box of Yogg-Saron
 
-		{  64479,  91209, 0,  45,   nil },  -- Ewer of Jormungar Blood
-		{  64477,  91191, 0,  45,   nil },  -- Gruesome Heart Box
-		{  64476,  91188, 0,  45,   nil },  -- Infested Ruby Ring
-		{  64475,  91170, 0,  45,   nil },  -- Scepter of Nezar'Azret
-		{  64478,  91197, 0,  45,   nil },  -- Six-Clawed Cornice
-		{  64474,  91133, 0,  45,   nil },  -- Spidery Sundial
-		{  64480,  91211, 0,  45,   nil },  -- Vizier's Scrawled Streamer
+		{  64479,  91209, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_POTION_100' },  -- Ewer of Jormungar Blood
+		{  64477,  91191, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_ORNATEBOX' },  -- Gruesome Heart Box
+		{  64476,  91188, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_RUBYSTAR' },  -- Infested Ruby Ring
+		{  64475,  91170, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_NERUBIANSPIDERSCEPTER' },  -- Scepter of Nezar'Azret
+		{  64478,  91197, 0,  45,   nil, 'INTERFACE\\ICONS\\ACHIEVEMENT_DUNGEON_AZJOLLOWERCITY_25MAN' },  -- Six-Clawed Cornice
+		{  64474,  91133, 0,  45,   nil, 'INTERFACE\\ICONS\\INV_MISC_POCKETWATCH_03' },  -- Spidery Sundial
+		{  64480,  91211, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_AQIR_HIEROGLYPHIC' },  -- Vizier's Scrawled Streamer
 	},
-	[401] = {
-		{  60847,  92137, 1, 150,   nil },  -- Crawling Claw
-		{  64881,  92145, 1, 150,   nil },  -- Pendant of the Scarab Storm
-		{  64904,  92168, 1, 150,   nil },  -- Ring of the Boy Emperor
-		{  64883,  92148, 1, 150,   nil },  -- Scepter of Azj'Aqir
-		{  64885,  92163, 1, 150,   nil },  -- Scimitar of the Sirocco
-		{  64880,  92139, 1, 150,   nil },  -- Staff of Ammunae
+	-- Tol'vir
+	[64397] = {
+		{  60847,  92137, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SHRIVELEDMONKEYPAW' },  -- Crawling Claw
+		{  64881,  92145, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_PENDANT OF THE AQIR' },  -- Pendant of the Scarab Storm
+		{  64904,  92168, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_RING OF THE BOYEMPEROR' },  -- Ring of the Boy Emperor
+		{  64883,  92148, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SCEPTOR OF AZAQIR' },  -- Scepter of Azj'Aqir
+		{  64885,  92163, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SCIMITAR OF THE SIROCCO' },  -- Scimitar of the Sirocco
+		{  64880,  92139, 1, 150,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_STAFF OF AMMUNRAE' },  -- Staff of Ammunae
 
-		{  64657,  91790, 0,  45,   nil },  -- Canopic Jar
-		{  64652,  91775, 0,  45,   nil },  -- Castle of Sand
-		{  64653,  91779, 0,  45,   nil },  -- Cat Statue with Emerald Eyes
-		{  64656,  91785, 0,  45,   nil },  -- Engraved Scimitar Hilt
-		{  64658,  91792, 0,  45,   nil },  -- Sketch of a Desert Palace
-		{  64654,  91780, 0,  45,   nil },  -- Soapstone Scarab Necklace
-		{  64655,  91782, 0,  45,   nil },  -- Tiny Oasis Mosaic
+		{  64657,  91790, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_ULDUMCANOPICJAR' },  -- Canopic Jar
+		{  64652,  91775, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SAND CASTLE' },  -- Castle of Sand
+		{  64653,  91779, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_CATSTATUEEMERALDEYES' },  -- Cat Statue with Emerald Eyes
+		{  64656,  91785, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_ENGRAVEDSCIMITARPOMMEL' },  -- Engraved Scimitar Hilt
+		{  64658,  91792, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SKETCHDESERTPALACE' },  -- Sketch of a Desert Palace
+		{  64654,  91780, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_SOAPSTONESCARABNECKLACE' },  -- Soapstone Scarab Necklace
+		{  64655,  91782, 0,  45,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_TINYOASISMOSAIC' },  -- Tiny Oasis Mosaic
 	},
-	[676] = {
-		{  89685, 113981, 1, 180,   nil },  -- Spear of Xuen
-		{  89684, 113980, 1, 180,   nil },  -- Umbrella of Chi-Ji
+	-- Pandaren
+	[79868] = {
+		{  89685, 113981, 1, 180,   nil, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_SPEAROFXUEN' },  -- Spear of Xuen
+		{  89684, 113980, 1, 180,   nil, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_UMBRELLAOFCHIJI' },  -- Umbrella of Chi-Ji
 
-		{  79903, 113977, 0,  50, 31802 },  -- Apothecary Tins
-		{  79901, 113975, 0,  50, 31800 },  -- Carved Bronze Mirror
-		{  79897, 113971, 0,  50, 31796 },  -- Panderan Game Board
-		{  79900, 113974, 0,  50, 31799 },  -- Empty Keg of Brewfather Xin Wo Yin
-		{  79902, 113976, 0,  50, 31801 },  -- Gold-Inlaid Porecelain Funerary Figurine
-		{  79904, 113978, 0,  50, 31803 },  -- Pearl of Yu'lon
-		{  79905, 113979, 0,  50, 31804 },  -- Standard  of Niuzao
-		{  79898, 113972, 0,  50, 31797 },  -- Twin Stein Set of Brewfather Quan Tou Kuo
-		{  79899, 113973, 0,  50, 31798 },  -- Walking Cane of Brewfather Ren Yun
-		{  79896, 113968, 0,  50, 31795 },  -- Pandaren Tea Set
+		{  79903, 113977, 0,  50, 31802, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_APOTHECARYTINS' },  -- Apothecary Tins
+		{  79901, 113975, 0,  50, 31800, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_CARVEDBRONZEMIRROR' },  -- Carved Bronze Mirror
+		{  79897, 113971, 0,  50, 31796, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_CHANGKIBOARD' },  -- Panderan Game Board
+		{  79900, 113974, 0,  50, 31799, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_EMPTYKEGOFBREWFATHERXINWOYIN' },  -- Empty Keg of Brewfather Xin Wo Yin
+		{  79902, 113976, 0,  50, 31801, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_GOLDINLAIDPORCELAINFUNERARYFIGURINE' },  -- Gold-Inlaid Porecelain Funerary Figurine
+		{  79904, 113978, 0,  50, 31803, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_PEARLOFYULON' },  -- Pearl of Yu'lon
+		{  79905, 113979, 0,  50, 31804, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_STANDARDOFNUZAO' },  -- Standard  of Niuzao
+		{  79898, 113972, 0,  50, 31797, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_TWINSTEINSETOFBREWFATHERQUANTOUKUO' },  -- Twin Stein Set of Brewfather Quan Tou Kuo
+		{  79899, 113973, 0,  50, 31798, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_WALKINGCANEOFBREWFATHERRENYUN' },  -- Walking Cane of Brewfather Ren Yun
+		{  79896, 113968, 0,  50, 31795, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_PANDARENTEASET' },  -- Pandaren Tea Set
 	},
-	[677] = {
-		{  89614, 113993, 1, 180,   nil },  -- Anatomical Dummy
-		{  89611, 113992, 1, 180,   nil },  -- Quilen Statuette
+	-- Mogu
+	[79869] = {
+		{  89614, 113993, 1, 180,   nil, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_ANATOMICALDUMMY' },  -- Anatomical Dummy
+		{  89611, 113992, 1, 180,   nil, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_QUILENSTATUETTE' },  -- Quilen Statuette
 
-		{  79909, 113983, 0,  50, 31787 },  -- Cracked Mogu Runestone
-		{  79913, 113987, 0,  50, 31791 },  -- Edicts of the Thunder King
-		{  79914, 113988, 0,  50, 31792 },  -- Iron Amulet
-		{  79908, 113982, 0,  50, 31786 },  -- Manacles of Rebellion
-		{  79916, 113990, 0,  50, 31794 },  -- Mogu Coin
-		{  79911, 113985, 0,  50, 31789 },  -- Petrified Bone Whip
-		{  79910, 113984, 0,  50, 31788 },  -- Terracotta Arm
-		{  79912, 113986, 0,  50, 31790 },  -- Thunder King Insignia
-		{  79915, 113989, 0,  50, 31793 },  -- Warlord's Branding Iron
-		{  79917, 113991, 0,  50, 31805 },  -- Worn Monument Ledger
+		{  79909, 113983, 0,  50, 31787, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_CRACKEDMOGURUNESTONE' },  -- Cracked Mogu Runestone
+		{  79913, 113987, 0,  50, 31791, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_EDICTSOFTHETHUNDERKING' },  -- Edicts of the Thunder King
+		{  79914, 113988, 0,  50, 31792, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_IRONAMULET' },  -- Iron Amulet
+		{  79908, 113982, 0,  50, 31786, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_MANACLESOFREBELLION' },  -- Manacles of Rebellion
+		{  79916, 113990, 0,  50, 31794, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_MOGUCOIN' },  -- Mogu Coin
+		{  79911, 113985, 0,  50, 31789, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_PETRIFIEDBONEWHIP' },  -- Petrified Bone Whip
+		{  79910, 113984, 0,  50, 31788, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_TERRACOTTAARM' },  -- Terracotta Arm
+		{  79912, 113986, 0,  50, 31790, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_THUNDERKINGINSIGNIA' },  -- Thunder King Insignia
+		{  79915, 113989, 0,  50, 31793, 'INTERFACE\\ICONS\\ARCHAEOLOGY_5_0_WARLORDSBRANDINGIRON' },  -- Warlord's Branding Iron
+		{  79917, 113991, 0,  50, 31805, 'INTERFACE\\ICONS\\ABILITY_WARLOCK_ANCIENTGRIMOIRE' },  -- Worn Monument Ledger
 	},
-	[754] = {
-		{  95391, 139786, 1, 180,   nil },  -- Mantid Sky Reaver
-		{  95392, 139787, 1, 180,   nil },  -- Sonic Pulse Generator
+	-- Mantid
+	[95373] = {
+		{  95391, 139786, 1, 180,   nil, 'INTERFACE\\ICONS\\INV_SWORD_1H_MANTIDARCH_C_01' },  -- Mantid Sky Reaver
+		{  95392, 139787, 1, 180,   nil, 'INTERFACE\\ICONS\\INV_FIREARM_2H_RIFLE_ARCHAEOLOGY_D_01' },  -- Sonic Pulse Generator
 
-		{  95375, 139776, 0,  50, 32686 },  -- Banner of the Mantid Empire
-		{  95376, 139779, 0,  50, 32687 },  -- Ancient Sap Feeder
-		{  95377, 139780, 0,  50, 32688 },  -- The Praying Mantid
-		{  95378, 139781, 0,  50, 32689 },  -- Inert Sound Beacon
-		{  95379, 139782, 0,  50, 32690 },  -- Remains of a Paragon
-		{  95380, 139783, 0,  50, 32691 },  -- Mantid Lamp
-		{  95381, 139784, 0,  50, 32692 },  -- Pollen Collector
-		{  95382, 139785, 0,  50, 32693 },  -- Kypari Sap Container
+		{  95375, 139776, 0,  50, 32686, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDBANNER_01' },  -- Banner of the Mantid Empire
+		{  95376, 139779, 0,  50, 32687, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDFEEDINGDEVICE_01' },  -- Ancient Sap Feeder
+		{  95377, 139780, 0,  50, 32688, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDSTATUE_01' },  -- The Praying Mantid
+		{  95378, 139781, 0,  50, 32689, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDCELLTOWERUNGEMMED_01' },  -- Inert Sound Beacon
+		{  95379, 139782, 0,  50, 32690, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDHEAD_01' },  -- Remains of a Paragon
+		{  95380, 139783, 0,  50, 32691, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDLAMPPOST_01' },  -- Mantid Lamp
+		{  95381, 139784, 0,  50, 32692, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDPOLLENCOLLECTOR_01' },  -- Pollen Collector
+		{  95382, 139785, 0,  50, 32693, 'INTERFACE\\ICONS\\INV_MISC_ARCHAEOLOGY_MANTIDBASKET_01' },  -- Kypari Sap Container
 	},
-	[828] = {
-		{ 117354, 172460, 1, 250,   nil },  -- Ancient Nest Guardian
-		{ 117382, 168331, 1, 190,   nil },  -- Beakbreaker of Terokk
+	-- Ogre
+	[109584] = {
+		{ 117385, 168319, 1, 150,   nil, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_SORCERER_KING_TOE_RING' },  -- Sorcerer-King Toe Ring
+		{ 117384, 168320, 1, 200,   nil, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_WARMAUL_CHIEFTAIN' },  -- Warmaul of the Warmaul Chieftain
 
-		{ 114204, 168328, 0,  70, 36778 },  -- Apexis Crystal
-		{ 114205, 168329, 0,  65, 36779 },  -- Apexis Hieroglyph
-		{ 114206, 168330, 0,  50, 36780 },  -- Apexis Scroll
-		{ 114198, 168322, 0,  55, 36772 },  -- Burial Urn
-		{ 114199, 168323, 0,  50, 36773 },  -- Decree Scrolls
-		{ 114197, 168321, 0,  45, 36771 },  -- Dreamcatcher
-		{ 114203, 168327, 0,  45, 36777 },  -- Outcast Dreamcatcher
-		{ 114200, 168324, 0,  45, 36774 },  -- Solar Orb
-		{ 114201, 168325, 0,  60, 36775 },  -- Sundial
-		{ 114202, 168326, 0,  50, 36776 },  -- Talonpriest Mask
+		{ 114191, 168315, 0,  70, 36767, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_HARGUNN_EYE' },  -- Eye of Har'gunn the Blind
+		{ 114189, 168313, 0,  50, 36765, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_GLADIATOR_SHIELD' },  -- Gladiator's Shield
+		{ 114190, 168314, 0,  55, 36766, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_MORTARPESTLE' },  -- Mortar and Pestle
+		{ 114185, 168311, 0,  45, 36763, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_FIGURINE' },  -- Ogre Figurine
+		{ 114187, 168312, 0,  55, 36764, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_PICTOGRAM_TABLET' },  -- Pictogram Carving
+		{ 114194, 168318, 0,  45, 36770, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_IMPERIAL_DECREE_STELE' },  -- Imperial Decree Stele
+		{ 114193, 168317, 0,  55, 36769, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_CHIMERA_RIDING_HARNESS' },  -- Rylak Riding Harness
+		{ 114192, 168316, 0,  50, 36768, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_IRONGOB' },  -- Stone Dentures
+		{ 114183, 168310, 0,  55, 36762, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_STONE_MANACLES' },  -- Stone Manacles
+		{ 114181, 168309, 0,  40, 36761, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_OGRES_STONEMAUL_SUCCESSION_STONE' },  -- Stonemaul Succession Stone
 	},
-	[821] = {
-		{ 117380, 172466, 1, 175,   nil },  -- Ancient Frostwolf Fang
-		{ 116985, 172459, 1, 180,   nil },  -- Headdress of the First Shaman
+	-- Draenor Clans
+	[108439] = {
+		{ 117380, 172466, 1, 175,   nil, 'INTERFACE\\ICONS\\INV_JEWELRY_FROSTWOLFTRINKET_02' },  -- Ancient Frostwolf Fang
+		{ 116985, 172459, 1, 180,   nil, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_ANCIENTORCSHAMANHEADDRESS' },  -- Headdress of the First Shaman
 
-		{ 114171, 168305, 0,  55, 36756 },  -- Ancestral Talisman
-		{ 114163, 168301, 0,  45, 36753 },  -- Barbed Fishing Hook
-		{ 114157, 168298, 0,  50, 36750 },  -- Blackrock Razor
-		{ 114165, 168302, 0,  45, 36754 },  -- Calcified Eye In a Jar
-		{ 114167, 168303, 0,  40, 36755 },  -- Ceremonial Tattoo Needles
-		{ 114169, 168304, 0,  45, 36757 },  -- Cracked Ivory Idol
-		{ 114177, 168308, 0,  40, 36760 },  -- Doomsday Prophecy
-		{ 114155, 168297, 0,  65, 36749 },  -- Elemental Bellows
-		{ 114141, 168290, 0,  50, 36725 },  -- Fang-Scarred Frostwolf Axe
-		{ 114173, 168306, 0,  50, 36758 },  -- Flask of Blazegrease
-		{ 114143, 168291, 0,  60, 36743 },  -- Frostwolf Ancestry Scrimshaw
-		{ 114161, 168300, 0,  60, 36752 },  -- Hooked Dagger
-		{ 114153, 168296, 0,  50, 36748 },  -- Metalworker's Hammer
-		{ 114175, 168307, 0,  55, 36759 },  -- Gronn-Tooth Necklace
-		{ 114147, 168293, 0,  45, 36745 },  -- Warsinger's Drums
-		{ 114151, 168295, 0,  60, 36747 },  -- Warsong Ceremonial Pike
-		{ 114159, 168299, 0,  45, 36751 },  -- Weighted Chopping Axe
-		{ 114145, 168292, 0,  45, 36744 },  -- Wolfskin Snowshoes
-		{ 114149, 168294, 0,  55, 36746 },  -- Screaming Bullroarer
+		{ 114171, 168305, 0,  55, 36756, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_TALISMAN' },  -- Ancestral Talisman
+		{ 114163, 168301, 0,  45, 36753, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_BARBEDHOOK' },  -- Barbed Fishing Hook
+		{ 114157, 168298, 0,  50, 36750, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_BLACKROCKRAZOR' },  -- Blackrock Razor
+		{ 114165, 168302, 0,  45, 36754, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_JAREYE' },  -- Calcified Eye In a Jar
+		{ 114167, 168303, 0,  40, 36755, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_TATTOOKNIFE' },  -- Ceremonial Tattoo Needles
+		{ 114169, 168304, 0,  45, 36757, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_CRACKEDIDOL' },  -- Cracked Ivory Idol
+		{ 114177, 168308, 0,  40, 36760, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_DOOMSDAYTABLET' },  -- Doomsday Prophecy
+		{ 114155, 168297, 0,  65, 36749, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_BELLOW' },  -- Elemental Bellows
+		{ 114141, 168290, 0,  50, 36725, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_FROSTWOLFAXE' },  -- Fang-Scarred Frostwolf Axe
+		{ 114173, 168306, 0,  50, 36758, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_BLAZEGREASE' },  -- Flask of Blazegrease
+		{ 114143, 168291, 0,  60, 36743, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_SCRIMSHAW' },  -- Frostwolf Ancestry Scrimshaw
+		{ 114161, 168300, 0,  60, 36752, 'INTERFACE\\ICONS\\INV_MISC_SKINNINGKNIFE' },  -- Hooked Dagger
+		{ 114153, 168296, 0,  50, 36748, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_METALWORKERSHAMMER' },  -- Metalworker's Hammer
+		{ 114175, 168307, 0,  55, 36759, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_GRONTOOTHNECKLACE' },  -- Gronn-Tooth Necklace
+		{ 114147, 168293, 0,  45, 36745, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_WARSINGERSDRUMS' },  -- Warsinger's Drums
+		{ 114151, 168295, 0,  60, 36747, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_WARSONGPIKE' },  -- Warsong Ceremonial Pike
+		{ 114159, 168299, 0,  45, 36751, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_HOOKEDDAGGER' },  -- Weighted Chopping Axe
+		{ 114145, 168292, 0,  45, 36744, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_ORCCLANS_SNOWSHOE' },  -- Wolfskin Snowshoes
+		{ 114149, 168294, 0,  55, 36746, 'INTERFACE\\ICONS\\INV_BULLROARER' },  -- Screaming Bullroarer
 	},
-	[829] = {
-		{ 117385, 168319, 1, 150,   nil },  -- Sorcerer-King Toe Ring
-		{ 117384, 168320, 1, 200,   nil },  -- Warmaul of the Warmaul Chieftain
+	-- Arakkoa
+	[109585] = {
+		{ 117354, 172460, 1, 250,   nil, 'INTERFACE\\ICONS\\ABILITY_SKYREACH_EMPOWERED' },  -- Ancient Nest Guardian
+		{ 117382, 168331, 1, 190,   nil, 'INTERFACE\\ICONS\\INV_MACE_1H_ARAKKOA_C_01' },  -- Beakbreaker of Terokk
 
-		{ 114191, 168315, 0,  70, 36767 },  -- Eye of Har'gunn the Blind
-		{ 114189, 168313, 0,  50, 36765 },  -- Gladiator's Shield
-		{ 114190, 168314, 0,  55, 36766 },  -- Mortar and Pestle
-		{ 114185, 168311, 0,  45, 36763 },  -- Ogre Figurine
-		{ 114187, 168312, 0,  55, 36764 },  -- Pictogram Carving
-		{ 114194, 168318, 0,  45, 36770 },  -- Imperial Decree Stele
-		{ 114193, 168317, 0,  55, 36769 },  -- Rylak Riding Harness
-		{ 114192, 168316, 0,  50, 36768 },  -- Stone Dentures
-		{ 114183, 168310, 0,  55, 36762 },  -- Stone Manacles
-		{ 114181, 168309, 0,  40, 36761 },  -- Stonemaul Succession Stone
+		{ 114204, 168328, 0,  70, 36778, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_APEXISCRYSTAL' },  -- Apexis Crystal
+		{ 114205, 168329, 0,  65, 36779, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_APEXISHIEROGLYPH' },  -- Apexis Hieroglyph
+		{ 114206, 168330, 0,  50, 36780, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_APEXISSCROLL' },  -- Apexis Scroll
+		{ 114198, 168322, 0,  55, 36772, 'INTERFACE\\ICONS\\INV__WOD_ARAKOA6' },  -- Burial Urn
+		{ 114199, 168323, 0,  50, 36773, 'INTERFACE\\ICONS\\INV__WOD_ARAKOA5' },  -- Decree Scrolls
+		{ 114197, 168321, 0,  45, 36771, 'INTERFACE\\ICONS\\INV__WOD_ARAKOA1' },  -- Dreamcatcher
+		{ 114203, 168327, 0,  45, 36777, 'INTERFACE\\ICONS\\TRADE_ARCHAEOLOGY_OUTCASTDREAMCATCHER' },  -- Outcast Dreamcatcher
+		{ 114200, 168324, 0,  45, 36774, 'INTERFACE\\ICONS\\INV__WOD_ARAKOA4' },  -- Solar Orb
+		{ 114201, 168325, 0,  60, 36775, 'INTERFACE\\ICONS\\INV__WOD_ARAKOA3' },  -- Sundial
+		{ 114202, 168326, 0,  50, 36776, 'INTERFACE\\ICONS\\INV__WOD_ARAKOA2' },  -- Talonpriest Mask
+	},
+	-- Highborne
+	[130903] = {
+		{ 130907, 196471, 0,  45, 40350, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_HIGHBORNE_INERTLEYSTONECHARM' },  -- Inert Leystone Charm
+		{ 130910, 196474, 0, 100, 40353, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_HIGHBORNE_NOBLEMANSLETTEROPENER' },  -- Nobleman's Letter Opener
+		{ 130909, 196473, 0, 120, 40352, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_HIGHBORNE_PREWARTAPESTRY' },  -- Pre-War Highborne Tapestry
+		{ 130908, 196472, 0,  50, 40351, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_HIGHBORNE_VIALOFPOISON' },  -- Quietwine Vial
+		{ 130906, 196470, 0,  35, 40349, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_HIGHBORNE_VIOLETGLASSVESSEL' },  -- Violetglass Vessel
+	},
+	-- Highmountain tauren
+	[130904] = {
+		{ 130914, 196478, 0, 115, 40357, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_TAUREN_DROGBARGEMROLLER' },  -- Drogbar Gem-Roller
+		{ 130913, 196477, 0,  50, 40356, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_TAUREN_HANDSMOOTHEDPYRESTONE' },  -- Hand-Smoothed Pyrestone
+		{ 130912, 196476, 0,  30, 40355, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_TAUREN_MOOSEBONEFISHHOOK' },  -- Moosebone Fish-Hook
+		{ 130915, 196479, 0, 105, 40358, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_TAUREN_STONEWOODBOW' },  -- Stonewood Bow
+		{ 130911, 196475, 0,  65, 40354, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_TAUREN_DRUM' },  -- Trailhead Drum
+	},
+	-- Demonic
+	[130905] = {
+		{ 130917, 196481, 0,  85, 40360, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_DEMON_FLAYEDSKINCHRONICLE' },  -- Flayed-Skin Chronicle
+		{ 130920, 196484, 0, 170, 40363, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_DEMON_HOUNDSTOOTHHAUBERK' },  -- Houndstooth Hauberk
+		{ 130916, 196480, 0,  60, 40359, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_DEMON_IMPSCUP' },  -- Imp's Cup
+		{ 130918, 196482, 0,  95, 40361, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_DEMON_MALFORMEDABYSSAL' },  -- Malformed Abyssal
+		{ 130919, 196483, 0, 140, 40362, 'INTERFACE\\ICONS\\INV_ARCHAEOLOGY_70_DEMON_ORBOFINNERCHAOS' },  -- Orb of Inner Chaos
 	},
 }
 
@@ -804,9 +818,10 @@ function addon:ShowTooltip(raceId, mode)
 	if (mode == 0) then
 		GameTooltip:SetOwner(race.iconBtn, "ANCHOR_BOTTOM", 0, 10)
 
-		GameTooltip:AddLine(race.name, 1, 1, 0) -- yellow
+		GameTooltip:AddLine(race.id .. ". " .. race.name, 1, 1, 0) -- yellow
 		GameTooltip:AddLine(race.completedCommon.."/"..race.totalCommon.." Commons", 1, 1, 1)
 		GameTooltip:AddLine(race.completedRare.."/"..race.totalRare.." Rares", 0.375, 0.75, 1)
+		GameTooltip:AddLine(race.completedPristine.."/"..race.totalPristine.." Pristine", 0.2, 1, 0.2)
 	end
 
 	if (mode == 1) then
@@ -949,12 +964,21 @@ end
 
 function addon:OnArtifactHistoryReady(event, ...)
 	if IsArtifactCompletionHistoryAvailable() then
+		if not self.races then
+			self:LoadRaces()
+		end
+
 		self:UpdateHistory()
+
+		if self.action then
+			self:action()
+			self.action = nil
+		end
 
 		local cfg = Professor.options
 
 		for raceIndex, race in pairs(self.races) do
-			if (race.completedCommon  == 0) then
+			if (race.completedCommon  == 0 or race.totalCommon == 0) then
 				race.bar1fg:Hide()
 			else
 				race.bar1fg:Show()
@@ -966,11 +990,17 @@ function addon:OnArtifactHistoryReady(event, ...)
 				end
 			end
 
-			if (race.completedRare  == 0) then
+			local frameWidth
+			if race.totalRare > 0 then
+				frameWidth = cfg.frameMeterSize * race.completedRare / race.totalRare
+			else
+				frameWidth = cfg.frameMeterSize
+			end
+			if frameWidth == 0 then
 				race.bar2fg:Hide()
 			else
 				race.bar2fg:Show()
-				race.bar2fg:SetWidth(cfg.frameMeterSize * race.completedRare / race.totalRare)
+				race.bar2fg:SetWidth(frameWidth)
 
 				if (race.completedRare == race.totalRare) then
 					race.bar2fg:SetStatusBarColor(0, 1, 0)
