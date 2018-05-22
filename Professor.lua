@@ -98,7 +98,7 @@ function Professor.Race:new(id, name, icon, raceItemID)
 
 				artifactIndex = artifactIndex + 1
 				if name then
-					icon = string.upper(icon)
+--					icon = string.upper(icon)
 					if completionCount > 0 then
 						if self.artifacts[icon] then
 							self.artifacts[icon].firstCompletionTime = firstCompletionTime
@@ -180,6 +180,7 @@ function addon:LoadRaces()
 				local name = GetSpellInfo(spellId)
 
 				-- icon = string.gsub(string.upper(GetFileName(GetSpellTexture(spellId))), ".BLP", "")
+				icon = GetFileIDFromPath(icon)
 				aRace:AddArtifact(name, icon, spellId, itemId, (rarity == 1), fragments, questId)
 			end
 		end
