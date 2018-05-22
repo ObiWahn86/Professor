@@ -1,4 +1,4 @@
 -
- type: creole
- input-file: Docs/Main.txt
+ type: markdown
+ input-file: README.md
  output-page: "Main"
