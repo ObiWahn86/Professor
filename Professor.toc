@@ -1,9 +1,9 @@
 ## Title: Professor
-## Author: Ackis, Anossov, iamcal, Noloony, iceeagle
+## Author: Ackis, Anossov, iamcal, Noloony, iceeagle, ObiWahn68
 ## SavedVariables: ProfessorDB
 ## Notes: Artifact counts tracking
 
-## Interface: 70300
+## Interface: 90001
 ## Version: @project-version@
 
 ## X-Revision: @project-abbreviated-hash@
